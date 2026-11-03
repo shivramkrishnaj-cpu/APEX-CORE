@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APEX // CORE — Vehicle & Tech Spec Database</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Chakra Petch for Automotive/Tech HUD feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Chakra Petch', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        carbon: {
+                            950: '#090a0f',
+                            900: '#11131c',
+                            800: '#1a1d2b',
+                            700: '#262b3f',
+                        },
+                        apex: {
+                            red: '#ff2a4b',
+                            orange: '#ff6b2b',
+                            cyan: '#00f0ff',
+                            emerald: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Carbon Fiber & Tech Grid Styling */
+        body {
+            background-color: #090a0f;
+            color: #f1f5f9;
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(255, 42, 75, 0.08) 0%, transparent 35%),
+                radial-gradient(circle at 85% 80%, rgba(0, 240, 255, 0.07) 0%, transparent 35%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+        }
+
+        /* Editable outline indicator when Edit Mode is active */
+        body.edit-mode-active [data-editable="true"] {
+            outline: 1.5px dashed rgba(0, 240, 255, 0.55);
+            outline-offset: 4px;
+            cursor: text;
+            position: relative;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        body.edit-mode-active [data-editable="true"]:hover {
+            outline: 2px solid #00f0ff;
+            background-color: rgba(0, 240, 255, 0.07);
+        }
+        body.edit-mode-active [data-editable="true"]:focus {
+            outline: 2px solid #ff2a4b;
+            background-color: rgba(255, 42, 75, 0.08);
+        }
+
+        /* Prevent contenteditable blur bugs */
+        [contenteditable="true"] {
+            user-select: text;
+            -webkit-user-select: text;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262b3f;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff2a4b;
+        }
+
+        .card-glow {
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .card-glow:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 35px -10px rgba(255, 42, 75, 0.18), 0 0 15px -3px rgba(0, 240, 255, 0.12);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-apex-red selection:text-white">
+
+    <!-- STICKY NAVIGATION & LIVE EDITOR BAR -->
+    <header class="sticky top-0 z-40 backdrop-blur-xl bg-carbon-950/90 border-b border-carbon-700/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-apex-red to-apex-orange flex items-center justify-center shadow-lg shadow-apex-red/25">
+                    <i class="fa-solid fa-gauge-high text-white text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="siteBrandTitle" data-editable="true" data-site-field="brandTitle" class="font-display font-bold text-xl sm:text-2xl tracking-wider text-white">APEX // CORE</span>
+                        <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-carbon-800 text-apex-cyan border border-apex-cyan/30">v9.0 Exact Chassis Photos</span>
+                    </div>
+                    <p id="siteBrandTagline" data-editable="true" data-site-field="brandTagline" class="text-xs text-slate-400">Automotive Engineering & Core Hardware Database</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-5 text-sm font-medium text-slate-300">
+                <a href="#catalogSection" class="hover:text-apex-red transition-colors">Spec Catalog</a>
+                <a href="#compareSection" class="hover:text-apex-cyan transition-colors">Head-to-Head Compare</a>
+                <a href="#feedbackSection" class="hover:text-amber-400 transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-comment-dots text-apex-orange"></i> Feedback
+                </a>
+                <button onclick="openEditorModal()" class="hover:text-white transition-colors flex items-center gap-1.5 text-emerald-400">
+                    <i class="fa-solid fa-plus-circle"></i> Add Vehicle / Tech
+                </button>
+            </nav>
+
+            <!-- Edit Mode & Data Controls -->
+            <div class="flex items-center gap-2">
+                <!-- One-Click Auto-Repair All Photos Button -->
+                <button onclick="repairAllPhotos(true)" title="Auto-Fetch & Verify All Vehicle & Tech Photos from Wikipedia" class="px-3 py-2 rounded-xl font-mono text-xs flex items-center gap-1.5 bg-apex-cyan/15 hover:bg-apex-cyan/25 text-apex-cyan border border-apex-cyan/40 transition-all">
+                    <i id="repairPhotosIcon" class="fa-solid fa-images"></i>
+                    <span class="hidden sm:inline">Repair Photos</span>
+                </button>
+
+                <!-- Toggle Live Edit Mode -->
+                <button id="editModeBtn" onclick="toggleEditMode()" class="px-3.5 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm flex items-center gap-2 border transition-all bg-carbon-800 border-carbon-700 text-slate-200 hover:border-apex-cyan">
+                    <span id="editStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                    <i class="fa-solid fa-pen-ruler"></i>
+                    <span id="editModeText">Edit Site: OFF</span>
+                </button>
+
+                <!-- Admin Data Drawer Trigger -->
+                <button onclick="toggleAdminToolbar()" title="Save, Export, or Download Edited HTML" class="p-2.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 transition-colors">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- COLLAPSIBLE ADMIN / CMS TOOLBAR -->
+        <div id="adminToolbar" class="hidden bg-carbon-900/95 border-t border-b border-apex-cyan/40 transition-all">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5 text-xs sm:text-sm text-apex-cyan font-mono">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span><strong>CMS STUDIO:</strong> Click any highlighted text to edit inline, edit cards, or add new entries. All changes auto-save in your browser!</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openEditorModal()" class="px-3 py-1.5 rounded-lg bg-apex-red hover:bg-rose-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow">
+                        <i class="fa-solid fa-plus"></i> Add New Entry
+                    </button>
+                    <button onclick="repairAllPhotos(true)" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-camera-rotate"></i> Auto-Fetch All Photos
+                    </button>
+                    <button onclick="downloadUpdatedHTML()" class="px-3 py-1.5 rounded-lg bg-apex-cyan/20 hover:bg-apex-cyan/30 text-apex-cyan border border-apex-cyan/40 text-xs font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-code"></i> Download Updated HTML
+                    </button>
+                    <button onclick="exportDatabaseJSON()" class="px-3 py-1.5 rounded-lg bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 text-xs font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Export JSON
+                    </button>
+                    <label class="px-3 py-1.5 rounded-lg bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 text-xs font-medium flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-upload"></i> Import JSON
+                        <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importDatabaseJSON(event)">
+                    </label>
+                    <button onclick="confirmResetDatabase()" class="px-3 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 text-xs font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="relative overflow-hidden py-12 sm:py-16 border-b border-carbon-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <!-- Left Column: Hero Copy -->
+                <div class="lg:col-span-7 space-y-5">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-apex-red/10 border border-apex-red/30 text-apex-red text-xs font-mono uppercase tracking-widest">
+                        <span class="w-2 h-2 rounded-full bg-apex-red animate-pulse"></span>
+                        <span id="heroBadge" data-editable="true" data-site-field="heroBadge">INTERACTIVE POWERTRAIN & CORE HARDWARE ARCHIVE</span>
+                    </div>
+                    <h1 id="heroTitle" data-editable="true" data-site-field="heroTitle" class="font-display font-bold text-3xl sm:text-5xl lg:text-6xl leading-tight tracking-tight text-white">
+                        Where High-Revving <span class="text-transparent bg-clip-text bg-gradient-to-r from-apex-red via-apex-orange to-amber-400">Horsepower</span> Meets <span class="text-transparent bg-clip-text bg-gradient-to-r from-apex-cyan to-blue-400">Core Architecture</span>.
+                    </h1>
+                    <p id="heroSubtitle" data-editable="true" data-site-field="heroSubtitle" class="text-slate-300 text-base sm:text-lg max-w-2xl leading-relaxed">
+                        Explore deep-dive technical specifications across JDM icons, supercharged V8 muscle trucks, forced induction engineering, and modern GPU/APU core architectures. Turn on "Edit Site" anytime to customize specs, fetch real Wikipedia car photos, or publish your own builds.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3 pt-2">
+                        <a href="#catalogSection" class="px-5 py-3 rounded-xl bg-gradient-to-r from-apex-red to-apex-orange text-white font-display font-bold text-sm tracking-wide shadow-lg shadow-apex-red/25 hover:opacity-95 transition flex items-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> Browse Spec Database
+                        </a>
+                        <button onclick="openEditorModal()" class="px-5 py-3 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-white font-display font-semibold text-sm border border-carbon-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus text-apex-cyan"></i> Add Custom Vehicle / GPU
+                        </button>
+                        <button onclick="toggleEditMode()" class="px-4 py-3 rounded-xl bg-carbon-900/90 hover:bg-carbon-800 text-slate-300 font-mono text-xs border border-carbon-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square text-amber-400"></i> Toggle Inline Edit
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Live Telemetry Stats & Featured Highlight -->
+                <div class="lg:col-span-5">
+                    <div class="rounded-2xl bg-carbon-900/90 border border-carbon-700/90 p-5 sm:p-6 shadow-2xl relative overflow-hidden">
+                        <div class="flex items-center justify-between border-b border-carbon-800 pb-4 mb-4">
+                            <div>
+                                <span class="text-[11px] font-mono uppercase tracking-widest text-apex-cyan">TELEMETRY OVERVIEW</span>
+                                <h2 class="font-display font-bold text-lg text-white">Database Live Metrics</h2>
+                            </div>
+                            <span class="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono text-xs">
+                                LOCALSTORAGE READY
+                            </span>
+                        </div>
+
+                        <!-- Dynamic Counters -->
+                        <div class="grid grid-cols-2 gap-3 mb-5">
+                            <div class="p-3.5 rounded-xl bg-carbon-950/80 border border-carbon-800">
+                                <div class="text-xs text-slate-400 font-mono">Total Spec Entries</div>
+                                <div id="statTotalCount" class="font-display font-bold text-2xl sm:text-3xl text-white mt-0.5">15</div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-carbon-950/80 border border-carbon-800">
+                                <div class="text-xs text-slate-400 font-mono">Vehicles & Auto Tech</div>
+                                <div id="statAutoCount" class="font-display font-bold text-2xl sm:text-3xl text-apex-red mt-0.5">13</div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-carbon-950/80 border border-carbon-800">
+                                <div class="text-xs text-slate-400 font-mono">PC & Silicon Guides</div>
+                                <div id="statTechCount" class="font-display font-bold text-2xl sm:text-3xl text-apex-cyan mt-0.5">2</div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-carbon-950/80 border border-carbon-800">
+                                <div class="text-xs text-slate-400 font-mono">Editor Status</div>
+                                <div id="statEditState" class="font-display font-bold text-lg sm:text-xl text-emerald-400 mt-1">Synced</div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Guide Box -->
+                        <div class="rounded-xl bg-gradient-to-r from-carbon-800 to-carbon-900 p-4 border border-carbon-700 text-xs text-slate-300 space-y-1.5">
+                            <div class="font-semibold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info text-apex-cyan"></i> How to customize this website:
+                            </div>
+                            <p>1. Click <strong>"Edit Site: OFF"</strong> in the top bar to edit any headline or card directly.</p>
+                            <p>2. Click <strong>"Add Vehicle / Tech"</strong> to create new cars, bikes, or GPU benchmarks.</p>
+                            <p>3. Use <strong>"Download Updated HTML"</strong> in the sliders menu to save a standalone copy with your edits baked in.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MAIN SPEC CATALOG & FILTER SECTION -->
+    <main id="catalogSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 w-full">
+        <!-- Filter & Search Controls -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-8 border-b border-carbon-800">
+            <!-- Category Tabs -->
+            <div class="flex flex-wrap items-center gap-2" id="categoryTabs">
+                <button onclick="setCategory('ALL')" data-cat="ALL" class="cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-apex-red text-white shadow-lg shadow-apex-red/25">
+                    All Entries
+                </button>
+                <button onclick="setCategory('Cars & Trucks')" data-cat="Cars & Trucks" class="cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-carbon-900 text-slate-300 hover:bg-carbon-800 border border-carbon-700">
+                    <i class="fa-solid fa-car-side mr-1.5"></i>Cars & Trucks
+                </button>
+                <button onclick="setCategory('Motorcycles')" data-cat="Motorcycles" class="cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-carbon-900 text-slate-300 hover:bg-carbon-800 border border-carbon-700">
+                    <i class="fa-solid fa-motorcycle mr-1.5"></i>Motorcycles
+                </button>
+                <button onclick="setCategory('Auto Tech & EV')" data-cat="Auto Tech & EV" class="cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-carbon-900 text-slate-300 hover:bg-carbon-800 border border-carbon-700">
+                    <i class="fa-solid fa-microchip mr-1.5"></i>Auto Tech & EV
+                </button>
+                <button onclick="setCategory('PC & Silicon')" data-cat="PC & Silicon" class="cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-carbon-900 text-slate-300 hover:bg-carbon-800 border border-carbon-700">
+                    <i class="fa-solid fa-memory mr-1.5"></i>PC & Silicon
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="relative w-full md:w-80">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    oninput="handleSearch(this.value)"
+                    placeholder="Search Supra, GT-R, 350Z, NSX, RX 6600..." 
+                    class="w-full pl-10 pr-9 py-2.5 rounded-xl bg-carbon-900 border border-carbon-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-apex-cyan transition"
+                >
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Edit Mode Notice Banner -->
+        <div id="inlineEditNotice" class="hidden my-6 p-4 rounded-xl bg-apex-cyan/10 border border-apex-cyan/40 text-apex-cyan flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-pen-nib text-base"></i>
+                <span><strong>Inline Edit Mode is ON:</strong> Click directly on any card title, summary, or spec badge below to edit text on the fly, or use the <strong>Edit Modal</strong> button on any card for full control.</span>
+            </div>
+            <button onclick="openEditorModal()" class="px-3 py-1.5 rounded-lg bg-apex-cyan text-carbon-950 font-display font-bold text-xs">
+                + New Spec Card
+            </button>
+        </div>
+
+        <!-- CARDS GRID -->
+        <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-8">
+            <!-- Dynamically populated by JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden py-16 text-center space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-carbon-900 border border-carbon-700 flex items-center justify-center mx-auto text-slate-400 text-2xl">
+                <i class="fa-solid fa-magnifying-glass-Minus"></i>
+            </div>
+            <h3 class="font-display font-bold text-xl text-white">No Matching Vehicles or Tech Specs Found</h3>
+            <p class="text-slate-400 text-sm max-w-md mx-auto">Try clearing your search filter or add a brand new custom entry to the database.</p>
+            <button onclick="clearSearch()" class="px-4 py-2 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-white text-xs font-semibold border border-carbon-700">
+                Reset Filters
+            </button>
+        </div>
+    </main>
+
+    <!-- INTERACTIVE SIDE-BY-SIDE SPEC COMPARISON TOOL -->
+    <section id="compareSection" class="py-14 bg-carbon-900/60 border-t border-b border-carbon-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                <div>
+                    <span class="text-xs font-mono uppercase tracking-widest text-apex-cyan">HEAD-TO-HEAD TELEMETRY BENCHMARK</span>
+                    <h2 id="compareHeading" data-editable="true" data-site-field="compareHeading" class="font-display font-bold text-2xl sm:text-3xl text-white mt-1">
+                        Interactive Spec Comparison Matrix
+                    </h2>
+                </div>
+                <p class="text-xs sm:text-sm text-slate-400 max-w-md">
+                    Select any two vehicles, engines, or hardware architectures from your database to compare primary telemetry and specifications side-by-side.
+                </p>
+            </div>
+
+            <!-- Selectors -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="p-4 rounded-xl bg-carbon-950 border border-carbon-700">
+                    <label class="block text-xs font-mono uppercase text-apex-red mb-2">Contender A (Left Corner)</label>
+                    <select id="compareSelectA" onchange="renderComparison()" class="w-full px-3.5 py-2.5 rounded-lg bg-carbon-900 border border-carbon-700 text-white text-sm focus:outline-none focus:border-apex-red"></select>
+                </div>
+                <div class="p-4 rounded-xl bg-carbon-950 border border-carbon-700">
+                    <label class="block text-xs font-mono uppercase text-apex-cyan mb-2">Contender B (Right Corner)</label>
+                    <select id="compareSelectB" onchange="renderComparison()" class="w-full px-3.5 py-2.5 rounded-lg bg-carbon-900 border border-carbon-700 text-white text-sm focus:outline-none focus:border-apex-cyan"></select>
+                </div>
+            </div>
+
+            <!-- Comparison Output Container -->
+            <div id="comparisonResult" class="rounded-2xl bg-carbon-950 border border-carbon-800 overflow-hidden shadow-xl">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- INTERACTIVE COMMUNITY FEEDBACK & VEHICLE / HARDWARE REQUEST SECTION -->
+    <section id="feedbackSection" class="py-14 bg-carbon-950 border-b border-carbon-800 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-apex-cyan/10 border border-apex-cyan/30 text-apex-cyan text-xs font-mono uppercase tracking-widest mb-2">
+                        <i class="fa-solid fa-satellite-dish"></i> COMMUNITY TELEMETRY & REQUESTS
+                    </div>
+                    <h2 id="feedbackHeading" data-editable="true" data-site-field="feedbackHeading" class="font-display font-bold text-2xl sm:text-4xl text-white">
+                        Enthusiast Feedback & Spec Request Board
+                    </h2>
+                </div>
+                <p id="feedbackSubheading" data-editable="true" data-site-field="feedbackSubheading" class="text-xs sm:text-sm text-slate-400 max-w-md">
+                    Spot a spec correction, or want to request a new JDM legend, superbike, or GPU benchmark? Leave your feedback below—all entries save directly to the site database.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Left Column: Submit Feedback Form -->
+                <div class="lg:col-span-5 rounded-2xl bg-carbon-900/90 border border-carbon-700/90 p-6 shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-carbon-800 pb-4 mb-5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-apex-red/15 border border-apex-red/40 flex items-center justify-center text-apex-red">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-display font-bold text-base sm:text-lg text-white">Submit Feedback / Request</h3>
+                                <p class="text-[11px] font-mono text-slate-400">Stored locally & included in HTML exports</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="feedbackForm" onsubmit="submitFeedbackForm(event)" class="space-y-4 text-sm">
+                        <div>
+                            <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Your Name / Callsign *</label>
+                            <input type="text" id="fbName" required placeholder="e.g., Takumi_AE86 or Boosted_RDNA" class="w-full px-3.5 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white placeholder-slate-500 focus:outline-none focus:border-apex-cyan transition">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Request Category *</label>
+                                <select id="fbCategory" class="w-full px-3 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white text-xs sm:text-sm focus:outline-none focus:border-apex-cyan">
+                                    <option value="Vehicle Request">Vehicle Request</option>
+                                    <option value="Bike Request">Bike Request</option>
+                                    <option value="PC / GPU Benchmark Request">PC / GPU Benchmark Request</option>
+                                    <option value="Spec Correction">Spec Correction</option>
+                                    <option value="General Feedback">General Feedback</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Octane Rating *</label>
+                                <select id="fbRating" class="w-full px-3 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-amber-400 font-mono text-xs sm:text-sm focus:outline-none focus:border-apex-cyan">
+                                    <option value="5">⚡⚡⚡⚡⚡ (5/5 Apex)</option>
+                                    <option value="4">⚡⚡⚡⚡ (4/5 High-Rev)</option>
+                                    <option value="3">⚡⚡⚡ (3/5 Solid)</option>
+                                    <option value="2">⚡⚡ (2/5 Needs Tuning)</option>
+                                    <option value="1">⚡ (1/5 Knock Detected)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Message / Build or Spec Details *</label>
+                            <textarea id="fbMessage" rows="4" required placeholder="Tell us which car, motorcycle, or GPU architecture you want added next, or share your thoughts on the site..." class="w-full px-3.5 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white placeholder-slate-500 focus:outline-none focus:border-apex-cyan transition"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-apex-red to-apex-orange text-white font-display font-bold text-sm tracking-wide shadow-lg shadow-apex-red/25 hover:opacity-95 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> Post to Community Board
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Column: Live Community Feedback Wall -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="font-mono text-xs uppercase tracking-wider text-slate-300">Live Enthusiast Feed (<span id="feedbackCountBadge">3</span> Posts)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="feedbackFilterSelect" onchange="renderFeedbackBoard()" class="px-3 py-1.5 rounded-lg bg-carbon-900 border border-carbon-700 text-xs text-slate-300 focus:outline-none focus:border-apex-cyan">
+                                <option value="ALL">All Categories</option>
+                                <option value="Vehicle Request">Vehicle Requests</option>
+                                <option value="Bike Request">Bike Requests</option>
+                                <option value="PC / GPU Benchmark Request">PC / GPU Requests</option>
+                                <option value="Spec Correction">Spec Corrections</option>
+                                <option value="General Feedback">General Feedback</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="feedbackBoardList" class="space-y-3.5 max-h-[540px] overflow-y-auto pr-1">
+                        <!-- Dynamically populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-carbon-950 border-t border-carbon-800 py-10 text-xs text-slate-400">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-apex-red to-apex-orange flex items-center justify-center text-white">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </div>
+                <span id="footerCopy" data-editable="true" data-site-field="footerCopy" class="text-slate-300 font-medium">
+                    APEX // CORE — Editable Vehicle & Tech Knowledge Base. All edits persist automatically in localStorage.
+                </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-4">
+                <a href="#feedbackSection" class="text-amber-400 hover:underline flex items-center gap-1">
+                    <i class="fa-solid fa-comment-dots"></i> Leave Feedback
+                </a>
+                <button onclick="openEditorModal()" class="hover:text-white transition">Add Entry</button>
+                <button onclick="exportDatabaseJSON()" class="hover:text-white transition">Export Backup</button>
+                <button onclick="downloadUpdatedHTML()" class="text-apex-cyan hover:underline">Save HTML File</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ARTICLE / FULL SPEC READER MODAL -->
+    <div id="readerModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-carbon-900 border border-carbon-700 rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl my-8 max-h-[90vh] flex flex-col">
+            <!-- Modal Header Image -->
+            <div class="relative h-60 sm:h-80 w-full bg-carbon-950 shrink-0">
+                <img id="readerImage" src="" alt="Spec Visual" class="w-full h-full object-cover opacity-90" onerror="this.src='https://placehold.co/900x500/11131c/ff2a4b?text=APEX+//+CORE'">
+                <div class="absolute inset-0 bg-gradient-to-t from-carbon-900 via-carbon-900/35 to-transparent"></div>
+                
+                <div class="absolute top-4 right-4 flex items-center gap-2">
+                    <button id="readerEditBtn" class="px-3.5 py-2 rounded-xl bg-carbon-950/90 hover:bg-apex-cyan hover:text-carbon-950 text-white text-xs font-display font-bold border border-carbon-700 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-pen"></i> Edit Entry / Photo
+                    </button>
+                    <button onclick="closeReaderModal()" class="w-9 h-9 rounded-xl bg-carbon-950/90 hover:bg-apex-red text-white flex items-center justify-center border border-carbon-700 transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Optional Dual-Generation / Dual-Model Gallery Switcher inside Reader -->
+                <div id="readerGalleryBar" class="hidden absolute top-4 left-4 flex flex-wrap items-center gap-1.5 bg-carbon-950/85 backdrop-blur-md p-1.5 rounded-xl border border-carbon-700">
+                    <!-- Populated dynamically when an entry has multiple verified model photos -->
+                </div>
+
+                <div class="absolute bottom-4 left-6 right-6">
+                    <span id="readerCategory" class="px-2.5 py-1 rounded bg-apex-red text-white font-mono text-[11px] uppercase tracking-wider">Category</span>
+                    <h2 id="readerTitle" class="font-display font-bold text-2xl sm:text-4xl text-white mt-2">Article Title</h2>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1">
+                <!-- 4-Key Telemetry Spec Strip -->
+                <div id="readerSpecsGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- Populated via JS -->
+                </div>
+
+                <!-- Summary Callout -->
+                <div id="readerSummary" class="p-4 rounded-xl bg-carbon-950 border-l-4 border-apex-cyan text-slate-200 text-sm sm:text-base font-medium leading-relaxed"></div>
+
+                <!-- Full Technical Write-up -->
+                <div id="readerContent" class="text-slate-300 text-sm sm:text-base leading-relaxed space-y-4 whitespace-pre-line"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD / EDIT POST MODAL (CMS STUDIO) -->
+    <div id="editorModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-carbon-900 border border-carbon-700 rounded-2xl max-w-3xl w-full overflow-hidden shadow-2xl my-8 max-h-[92vh] flex flex-col">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-carbon-950 border-b border-carbon-800 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-screwdriver-wrench text-apex-cyan"></i>
+                    <h3 id="editorModalTitle" class="font-display font-bold text-lg sm:text-xl text-white">Add / Edit Vehicle or Tech Entry</h3>
+                </div>
+                <button onclick="closeEditorModal()" class="w-8 h-8 rounded-lg bg-carbon-800 hover:bg-apex-red text-slate-300 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Form Body -->
+            <form id="entryForm" onsubmit="saveEntryForm(event)" class="p-6 overflow-y-auto space-y-5 flex-1 text-sm">
+                <input type="hidden" id="formEntryId">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Title / Model Name *</label>
+                        <input type="text" id="formTitle" required placeholder="e.g., Mazda RX-7 Spirit R (FD3S) or NVIDIA RTX 4070 Super" class="w-full px-3.5 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white focus:outline-none focus:border-apex-cyan">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Category *</label>
+                        <select id="formCategory" class="w-full px-3.5 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white focus:outline-none focus:border-apex-cyan">
+                            <option value="Cars & Trucks">Cars & Trucks</option>
+                            <option value="Motorcycles">Motorcycles</option>
+                            <option value="Auto Tech & EV">Auto Tech & EV</option>
+                            <option value="PC & Silicon">PC & Silicon</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Image URL + Live Wikipedia Photo Finder + Local File Upload + Verified Presets -->
+                <div class="p-4 rounded-xl bg-carbon-950 border border-carbon-800 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <label class="block text-xs font-mono uppercase text-apex-cyan">
+                            <i class="fa-solid fa-camera-retro mr-1"></i> Vehicle / Hardware Image Studio
+                        </label>
+                        <span class="text-[11px] text-slate-400">Paste a URL, auto-fetch from Wikipedia, or upload from your device</span>
+                    </div>
+
+                    <!-- Live Image Preview & URL Input -->
+                    <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                        <img id="formImagePreview" src="https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_350Z_R.jpg?width=400" alt="Preview" class="w-full sm:w-28 h-24 rounded-xl object-cover border border-carbon-700 bg-carbon-900 shrink-0" onerror="this.src='https://placehold.co/300x200/11131c/00f0ff?text=Preview'">
+                        <div class="flex-1 space-y-2">
+                            <input type="text" id="formImage" oninput="updateFormImagePreview(this.value)" placeholder="https://commons.wikimedia.org/wiki/Special:FilePath/..." class="w-full px-3.5 py-2 rounded-xl bg-carbon-900 border border-carbon-700 text-white text-xs focus:outline-none focus:border-apex-cyan">
+                            
+                            <!-- Live Wikipedia Search & Local File Upload Bar -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="flex-1 min-w-[180px] flex items-center gap-1">
+                                    <input type="text" id="wikiPhotoSearchInput" placeholder="Type model (e.g. Nissan 350Z, Honda NSX, Supra)..." class="w-full px-2.5 py-1.5 rounded-lg bg-carbon-900 border border-carbon-700 text-xs text-white focus:outline-none focus:border-apex-cyan">
+                                    <button type="button" onclick="fetchExactWikiPhoto()" class="px-3 py-1.5 rounded-lg bg-apex-cyan text-carbon-950 font-display font-bold text-xs shrink-0 hover:opacity-90 transition">
+                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Fetch Real Photo
+                                    </button>
+                                </div>
+                                <label class="px-2.5 py-1.5 rounded-lg bg-carbon-800 hover:bg-carbon-700 text-slate-200 border border-carbon-700 text-xs cursor-pointer flex items-center gap-1">
+                                    <i class="fa-solid fa-upload text-apex-red"></i> Upload File
+                                    <input type="file" accept="image/*" class="hidden" onchange="handleLocalImageUpload(event)">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verified Exact Model Presets -->
+                    <div class="pt-1">
+                        <span class="block text-[10px] font-mono uppercase text-slate-400 mb-1.5">Verified Model-Specific Presets (Click to apply):</span>
+                        <div class="flex flex-wrap gap-1.5 text-[11px]">
+                            <button type="button" onclick="setPresetByCommonsSearch('Toyota Supra JZA80 1994', 'File:1994_Toyota_Supra_Sport_Roof_in_Renaissance_Red,_front_left.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Supra Mk4 (A80)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Toyota GR Supra A90', 'File:2020_Toyota_GR_Supra_front_3.23.20.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">GR Supra Mk5 (A90)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Nissan Skyline GT-R BNR32', 'File:Nissan_Skyline_R32_GT-R_001.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-red border border-carbon-700 font-semibold">Skyline R32 GT-R (BNR32)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Nissan Skyline GT-R BCNR33', 'File:Nissan_Skyline_R33_GT-R_001.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Skyline R33 GT-R (BCNR33)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Nissan Skyline GT-R BNR34 V-Spec', 'File:Nissan_Skyline_R34_GT-R_Nür_001.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Skyline R34 GT-R (BNR34)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Nissan GT-R R35', 'File:Nissan_GT-R_01.JPG')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Nissan R35 GT-R</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Yamaha YZF-R15', 'File:Yamaha_YZF-R15_2018.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-amber-300 border border-carbon-700">Yamaha YZF-R15</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Kawasaki Ninja H2R', 'File:Kawasaki_Ninja_H2_at_the_Tokyo_Motor_Show_2015_1.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-amber-300 border border-carbon-700">Kawasaki Ninja H2/H2R</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Ducati Panigale V4', 'File:Ducati_Panigale_V4_S_01.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-amber-300 border border-carbon-700">Ducati Panigale V4</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('BMW S1000RR', 'File:BMW_S1000RR_Studio.JPG')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-amber-300 border border-carbon-700">BMW S1000RR</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Nissan 350Z Z33', 'File:Nissan_350Z_R.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Nissan 350Z (Z33)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Honda NSX NA1 red', 'File:Honda_NSX.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Honda NSX (NA1)</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Dodge Challenger SRT Hellcat', 'File:Dodge_Challenger_.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Dodge Challenger</button>
+                            <button type="button" onclick="setPresetByCommonsSearch('Ram 1500 TRX', 'File:Ram_1500_TRX.jpg')" class="px-2 py-1 rounded bg-carbon-800 hover:bg-carbon-700 text-apex-cyan border border-carbon-700">Ram 1500 TRX</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Custom Telemetry Specs -->
+                <div class="p-4 rounded-xl bg-carbon-950 border border-carbon-800 space-y-3">
+                    <div class="text-xs font-mono uppercase text-apex-cyan flex items-center gap-2">
+                        <i class="fa-solid fa-gauge"></i> Key Telemetry & Hardware Specs (Shown on Card & Comparison Tool)
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Power / Clock Speed (e.g., 306 HP or 2490 MHz)</label>
+                            <input type="text" id="formSpecPower" required placeholder="306 HP @ 6,800 RPM" class="w-full px-3 py-2 rounded-lg bg-carbon-900 border border-carbon-700 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Engine / Architecture (e.g., 3.5L V6 or RDNA 2)</label>
+                            <input type="text" id="formSpecArch" required placeholder="VQ35HR 3.5L Naturally Aspirated V6" class="w-full px-3 py-2 rounded-lg bg-carbon-900 border border-carbon-700 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">0-100 km/h / Perf Metric (e.g., 5.2s or 132W TDP)</label>
+                            <input type="text" id="formSpecPerf" required placeholder="5.2 sec (0-100 km/h) / RWD" class="w-full px-3 py-2 rounded-lg bg-carbon-900 border border-carbon-700 text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Era / Market Tier (e.g., 2003-2008 or 1080p Ultra)</label>
+                            <input type="text" id="formSpecTier" required placeholder="Z33 Chassis // JDM Sport" class="w-full px-3 py-2 rounded-lg bg-carbon-900 border border-carbon-700 text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div>
+                    <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Executive Summary (Displayed on Card) *</label>
+                    <textarea id="formSummary" rows="2" required placeholder="Concise overview of why this vehicle or hardware architecture matters..." class="w-full px-3.5 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white focus:outline-none focus:border-apex-cyan"></textarea>
+                </div>
+
+                <!-- Full Technical Article -->
+                <div>
+                    <label class="block text-xs font-mono uppercase text-slate-400 mb-1">Full Technical Breakdown & Engineering Notes *</label>
+                    <textarea id="formContent" rows="6" required placeholder="Write detailed specs, tuning notes, architectural comparisons, and buyer/builder advice..." class="w-full px-3.5 py-2.5 rounded-xl bg-carbon-950 border border-carbon-700 text-white focus:outline-none focus:border-apex-cyan"></textarea>
+                </div>
+
+                <!-- Modal Footer Buttons -->
+                <div class="flex items-center justify-end gap-3 pt-3 border-t border-carbon-800">
+                    <button type="button" onclick="closeEditorModal()" class="px-4 py-2.5 rounded-xl bg-carbon-800 hover:bg-carbon-700 text-slate-300 font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-apex-red to-apex-orange text-white font-display font-bold tracking-wide shadow-lg shadow-apex-red/25">
+                        <i class="fa-solid fa-floppy-disk mr-1.5"></i> Save to Database
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION MODAL (No window.confirm used) -->
+    <div id="confirmModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-carbon-900 border border-carbon-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3 text-apex-red">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                <h4 id="confirmTitle" class="font-display font-bold text-lg text-white">Confirm Action</h4>
+            </div>
+            <p id="confirmMessage" class="text-sm text-slate-300 leading-relaxed"></p>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl bg-carbon-800 text-slate-300 text-xs font-semibold">Cancel</button>
+                <button id="confirmActionBtn" class="px-4 py-2 rounded-xl bg-apex-red text-white text-xs font-semibold">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
+        <div class="px-4 py-3 rounded-xl bg-carbon-900 border border-apex-cyan/50 text-white shadow-2xl flex items-center gap-3 text-xs sm:text-sm">
+            <i class="fa-solid fa-circle-check text-apex-cyan text-base"></i>
+            <span id="toastMessage">Changes saved automatically!</span>
+        </div>
+    </div>
+
+    <!-- APPLICATION LOGIC & PRE-LOADED DATABASE -->
+    <script id="appDataScript">
+        // ============================================================================
+        // 1. DEFAULT PRE-LOADED VEHICLE & TECH DATABASE (APEX // CORE v7)
+        //    Uses verified Wikimedia Commons Special:FilePath URLs for exact car & bike models
+        // ============================================================================
+        const DEFAULT_SITE_CONFIG = {
+            brandTitle: "APEX // CORE",
+            brandTagline: "Automotive Engineering & Core Hardware Database",
+            heroBadge: "INTERACTIVE POWERTRAIN & CORE HARDWARE ARCHIVE",
+            heroTitle: "Where High-Revving <span class='text-transparent bg-clip-text bg-gradient-to-r from-apex-red via-apex-orange to-amber-400'>Horsepower</span> Meets <span class='text-transparent bg-clip-text bg-gradient-to-r from-apex-cyan to-blue-400'>Core Architecture</span>.",
+            heroSubtitle: "Explore deep-dive technical specifications across JDM icons, supercharged V8 muscle trucks, forced induction superbikes, and modern GPU/APU core architectures. Turn on 'Edit Site' anytime to customize specs, fetch real Wikipedia car photos, or publish your own builds.",
+            compareHeading: "Interactive Spec Comparison Matrix",
+            feedbackHeading: "Enthusiast Feedback & Spec Request Board",
+            feedbackSubheading: "Spot a spec correction, or want to request a new JDM legend, superbike, or GPU benchmark? Leave your feedback below—all entries save directly to the site database.",
+            footerCopy: "APEX // CORE — Editable Vehicle & Tech Knowledge Base. All edits persist automatically in localStorage."
+        };
+
+        const DEFAULT_FEEDBACK = [
+            {
+                id: "fb-default-1",
+                name: "Wankel_Apex_FD3S",
+                category: "Vehicle Request",
+                rating: 5,
+                date: "Verified Enthusiast Note",
+                likes: 19,
+                message: "The multi-gen photo switcher on the Supra (A80/A90/A70) and Skyline GT-R cards is awesome! Could we get a deep-dive entry on the Mazda RX-7 Spirit R (FD3S) covering the 13B-REW sequential twin-turbo rotary next?"
+            },
+            {
+                id: "fb-default-2",
+                name: "Desmo_TrackDay",
+                category: "Bike Request",
+                rating: 5,
+                date: "Verified Enthusiast Note",
+                likes: 14,
+                message: "Love seeing the Ninja H2R supercharger planetary gear ratio and Panigale V4 R counter-rotating crankshaft specs broken down side-by-side. The telemetry comparison matrix works great for bikes too."
+            },
+            {
+                id: "fb-default-3",
+                name: "SiliconBuilder_1080p",
+                category: "PC / GPU Benchmark Request",
+                rating: 5,
+                date: "Verified Enthusiast Note",
+                likes: 11,
+                message: "The RX 6600 vs GTX 1660 Ti efficiency write-up helped me pick the right card for a 550W PSU build. Would love to see an Intel Arc B580 vs RTX 4060 VRAM bandwidth comparison added!"
+            }
+        ];
+
+        const DEFAULT_ENTRIES = [
+            {
+                id: "yamaha-r15-series-v1-v4",
+                commonsFile: "File:Yamaha_YZF-R15.jpg",
+                commonsSearch: "Yamaha YZF-R15 blue motorcycle",
+                wikiTitle: "Yamaha_YZF-R15",
+                title: "Yamaha YZF-R15 Series (V1 to V4) — VVA 155cc Track-Ready Sportbike",
+                category: "Motorcycles",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Yamaha_YZF-R15.jpg?width=1000",
+                gallery: [
+                    { label: "Yamaha YZF-R15 Track Blue", commonsFile: "File:Yamaha_YZF-R15.jpg", commonsSearch: "Yamaha YZF-R15 blue", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Yamaha_YZF-R15.jpg?width=1000" },
+                    { label: "Yamaha YZF-R15 V3 / V4", commonsFile: "File:Yamaha_YZF_R15_v3.jpg", commonsSearch: "Yamaha YZF R15 V3", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Yamaha_YZF_R15_v3.jpg?width=1000" }
+                ],
+                specPower: "18.1–19.3 HP @ 10,000 RPM",
+                specArch: "155cc Liquid-Cooled SOHC w/ VVA",
+                specPerf: "136 km/h Top Speed | Deltabox Frame",
+                specTier: "Entry-Level Supersport Benchmark",
+                summary: "The definitive small-displacement supersport: combining a lightweight Deltabox frame, aluminum swingarm, assist-and-slipper clutch, and Variable Valve Actuation (VVA).",
+                content: `Engineering Evolution of the Yamaha YZF-R15:\nSince its debut, the Yamaha YZF-R15 has set the gold standard for entry-level sports motorcycles, bringing big-bike Deltabox chassis geometry and track ergonomics into a nimble 155cc package.\n\nKey Mechanical Enablers:\n1. Variable Valve Actuation (VVA): The 155cc liquid-cooled 4-valve engine utilizes a VVA system with two different intake cam profiles that switch automatically at 7,400 RPM, ensuring strong low-end torque for city riding and maximum high-rpm power past 10,000 RPM.\n2. Deltabox Chassis & Aluminum Swingarm: Modeled after Yamaha's YZR-M1 MotoGP and R-series superbikes, the perimeter Deltabox frame and cast aluminum swingarm provide exceptional rigidity and high-speed cornering stability.\n3. Assist & Slipper Clutch: Reduces back-torque during aggressive downshifting to prevent rear-wheel hop, while lightening lever pull for urban commuting.`
+            },
+            {
+                id: "toyota-supra-series-a70-a80-a90",
+                commonsFile: "File:1994_Toyota_Supra_Sport_Roof_in_Renaissance_Red,_front_left.jpg",
+                commonsSearch: "Toyota Supra JZA80",
+                wikiTitle: "Toyota_Supra",
+                title: "Toyota Supra Series (A70 / A80 Mk4 / A90 GR) — 2JZ-GTE & B58 Lineage",
+                category: "Cars & Trucks",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/1994_Toyota_Supra_Sport_Roof_in_Renaissance_Red,_front_left.jpg?width=1000",
+                gallery: [
+                    { label: "Mk4 A80 2JZ-GTE", commonsFile: "File:1994_Toyota_Supra_Sport_Roof_in_Renaissance_Red,_front_left.jpg", commonsSearch: "1994 Toyota Supra JZA80", url: "https://commons.wikimedia.org/wiki/Special:FilePath/1994_Toyota_Supra_Sport_Roof_in_Renaissance_Red,_front_left.jpg?width=1000" },
+                    { label: "Mk5 A90 GR Supra", commonsFile: "File:2020_Toyota_GR_Supra_front_3.23.20.jpg", commonsSearch: "2020 Toyota GR Supra", url: "https://commons.wikimedia.org/wiki/Special:FilePath/2020_Toyota_GR_Supra_front_3.23.20.jpg?width=1000" },
+                    { label: "Mk3 A70 Turbo", commonsFile: "File:1992_Toyota_Supra_Turbo_in_Super_Red_II,_front_left.jpg", commonsSearch: "Toyota Supra MA70 Turbo", url: "https://commons.wikimedia.org/wiki/Special:FilePath/1992_Toyota_Supra_Turbo_in_Super_Red_II,_front_left.jpg?width=1000" }
+                ],
+                specPower: "276–320 HP (2JZ) / 382 HP (B58)",
+                specArch: "3.0L Inline-6 (2JZ-GTE Sequential Turbo / B58 Twin-Scroll)",
+                specPerf: "3.9s–4.6s 0-100 km/h | RWD (V160 6-MT / ZF 8HP)",
+                specTier: "A70 / A80 / A90 JDM Legend",
+                summary: "Three generations of boosted straight-six grand touring and track dominance: from the 1JZ-powered A70 and the indestructible cast-iron 2JZ-GTE A80 Mk4 to the B58-powered A90 GR Supra.",
+                content: `A70 Mk3 Supra (1986–1993) — Breaking Away from the Celica:\nWith the A70 generation, Toyota severed the Celica prefix to establish the Supra as a dedicated rear-wheel-drive flagship Grand Tourer featuring Formula 1-derived double-wishbone suspension at all four corners and electronically modulated TEMS dampers.\n• 7M-GTE to 1JZ-GTE Evolution: Export markets received the 3.0L 7M-GTE turbo inline-6 (232 HP, and 270 HP in the Group A homologation Turbo A), while Japanese Domestic Market 2.5GT Twin-Turbo models debuted the high-revving 2.5L 1JZ-GTE parallel twin-turbo inline-6 rated at 276 HP (280 PS).\n\nA80 Mk4 Supra (1993–2002) — The 2JZ-GTE Engineering Masterpiece:\nEngineered under chief engineer Isao Tsuzuki with an obsessive focus on weight reduction (shedding up to 100 kg via aluminum hood, roof, bumper beams, and suspension arms), the A80 Supra became a global tuning icon.\n• 2JZ-GTE 3.0L Sequential Twin-Turbo Inline-6: Built around an over-engineered, closed-deck cast-iron cylinder block, forged steel crankshaft, recessed piston bowls with under-crown oil cooling squirters, and a 7-bolt main bearing girdle.\n• Sequential Turbocharging Architecture: Using twin Hitachi CT12B (JDM) or steel-wheeled CT20A (Export) turbochargers, exhaust gas is routed exclusively to the primary turbo at low RPM for instant boost response by 1,800 RPM. At 3,500–4,000 RPM, an electronically controlled exhaust bypass valve pre-spools and transitions into full parallel twin-turbo operation, delivering 276 HP (JDM) or 320 HP / 315 lb-ft (US/EU export) and 4.6-second 0–100 km/h sprints.\n• Getrag V160 / V161 6-Speed Manual & 1,000+ WHP Capability: Paired with a virtually unbreakable Getrag 6-speed gearbox and massive 4-piston brakes that helped the A80 set a production-car braking record (70–0 mph in 149 feet), the unopened factory 2JZ-GTE bottom end famously tolerates 700 to 1,000+ wheel horsepower when converted to a large single-turbo setup with upgraded fuel delivery.\n\nA90 / J29 Mk5 GR Supra (2019–Present) — The B58 & "Golden Ratio" Era:\nDeveloped by Toyota Gazoo Racing in collaboration with BMW, the fifth-generation GR Supra prioritized a 1.55:1 wheelbase-to-track width "Golden Ratio" (shortened 97.2-inch wheelbase—shorter than a GR86) and a lower center of gravity.\n• B58B30O1 3.0L Twin-Scroll Single-Turbo Inline-6: Utilizing a closed-deck aluminum block, forged internals, air-to-water intercooler integrated into the intake manifold, and Valvetronic variable valve lift, the 2021+ 6-port B58 engine officially produces 382 HP and 368 lb-ft of torque (often dyno-testing at 380+ WHP stock).\n• Drivetrain Options: Offered with either a lightning-quick ZF 8HP51 8-speed automatic or a dedicated 6-speed intelligent Manual Transmission (iMT) paired with an electronically controlled multi-plate active rear differential.`
+            },
+            {
+                id: "nissan-gtr-series-r32-r34-r35",
+                commonsFile: "File:Nissan_Skyline_R32_GT-R_001.jpg",
+                commonsSearch: "Nissan Skyline R32 GT-R BNR32",
+                wikiTitle: "Nissan_Skyline_GT-R",
+                title: "Nissan GT-R Series (R32 / R33 / R34 Skyline & R35) — RB26DETT to VR38DETT",
+                category: "Cars & Trucks",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_Skyline_R32_GT-R_001.jpg?width=1000",
+                gallery: [
+                    { label: "R32 Skyline \"Godzilla\" (BNR32)", commonsFile: "File:Nissan_Skyline_R32_GT-R_001.jpg", commonsSearch: "Nissan Skyline R32 GT-R BNR32", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_Skyline_R32_GT-R_001.jpg?width=1000" },
+                    { label: "R33 Skyline GT-R (BCNR33)", commonsFile: "File:Nissan_Skyline_R33_GT-R_001.jpg", commonsSearch: "Nissan Skyline R33 GT-R BCNR33", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_Skyline_R33_GT-R_001.jpg?width=1000" },
+                    { label: "R34 Skyline GT-R (BNR34)", commonsFile: "File:Nissan_Skyline_R34_GT-R_Nür_001.jpg", commonsSearch: "Nissan Skyline R34 GT-R BNR34", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_Skyline_R34_GT-R_Nür_001.jpg?width=1000" },
+                    { label: "R35 GT-R (VR38DETT)", commonsFile: "File:Nissan_GT-R_01.JPG", commonsSearch: "Nissan GT-R R35 front", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_GT-R_01.JPG?width=1000" }
+                ],
+                specPower: "276 HP (RB26 Official) / 480–600 HP (R35 NISMO)",
+                specArch: "2.6L Twin-Turbo I6 (RB26) & 3.8L Twin-Turbo V6 (VR38)",
+                specPerf: "2.7s (R35) – 4.8s (R34) | ATTESA E-TS Pro AWD",
+                specTier: "1989–Present JDM Halo (\"Godzilla\")",
+                summary: "From the Group A touring car dominance of the RB26DETT-powered R32, R33, and R34 Skyline GT-R to the transaxle-equipped, hand-built VR38DETT R35 supercar killer.",
+                content: `The Skyline GT-R Era (BNR32, BCNR33, BNR34 — 1989–2002):\nEngineered to dominate Group A motorsport, the 1989 R32 Skyline GT-R earned the nickname "Godzilla" in Australian touring car racing by winning 29 out of 29 races.\n• RB26DETT 2.6L Twin-Turbo Inline-6: Built around a closed-deck cast-iron block, aluminum 24-valve DOHC head, six individual throttle bodies (ITBs), and parallel ceramic turbochargers. While officially rated at 276 HP (280 PS) under Japan's Gentlemen's Agreement, showroom cars produced closer to 310–330 HP, and the stout iron block routinely supports 600 to 1,000+ HP with forged internals and larger single or twin turbos.\n• ATTESA E-TS & Super-HICAS: Nissan's electronically controlled torque-split AWD system behaves like a rear-wheel-drive car on dry tarmac until rear slip is detected, sending up to 50% of torque to the front axle in milliseconds. V-Spec ("Victory Specification") models added an Active Limited-Slip Differential (ATTESA E-TS Pro), stiffer suspension, and on the R34 (1999–2002), a Getrag 6-speed manual transmission and the iconic dashboard Multi-Function Display (MFD) co-developed with Polyphony Digital.\n• Homologation & Halo Specials: N1 models swapped fragile ceramic turbine wheels for steel ball-bearing turbos (such as the R34 V-Spec II Nür and M-Spec Nür), culminating in the ultra-rare NISMO R34 GT-R Z-Tune (2.8L stroked RB26DETT Z2 producing 500 HP).\n\nThe R35 GT-R Era (CBA / DBA / EBA — 2007–Present):\nDropping the "Skyline" name, the R35 GT-R moved to the dedicated PM (Premium Midship) platform to compete directly with European halo supercars.\n• Hand-Built VR38DETT 3.8L Twin-Turbo V6: Assembled in a hermetically sealed cleanroom by a single master craftsman ("Takumi") who affixes their signed plaque to the intake plenum. Features plasma-sprayed bore liners (replacing traditional cast-iron sleeves for superior heat transfer and reduced friction) and integrated exhaust manifold turbochargers. Power climbed from 480 HP at launch (2007) to 565 HP on later Premium models and 600 HP / 481 lb-ft on the GT-R NISMO using GT3-spec high-flow turbochargers.\n• Independent Rear Transaxle (GR6 DCT): Unlike front-transmission AWD cars, the R35 sends power from the front-mid engine down a carbon-fiber composite prop shaft to a rear-mounted BorgWarner 6-speed dual-clutch transaxle, returns power forward via a secondary driveshaft to the front wheels when needed, and achieves a balanced weight distribution with blistering 2.7-second 0–100 km/h launches.`
+            },
+            {
+                id: "kawasaki-ninja-h2r-supercharged",
+                commonsFile: "File:Kawasaki_Ninja_H2_at_the_Tokyo_Motor_Show_2015_1.jpg",
+                commonsSearch: "Kawasaki Ninja H2 motorcycle",
+                wikiTitle: "Kawasaki_Ninja_H2",
+                title: "Kawasaki Ninja H2 & H2R — Supercharged 998cc Hypersport Engineering",
+                category: "Motorcycles",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Kawasaki_Ninja_H2_at_the_Tokyo_Motor_Show_2015_1.jpg?width=1000",
+                gallery: [
+                    { label: "Ninja H2 Supercharged", commonsFile: "File:Kawasaki_Ninja_H2_at_the_Tokyo_Motor_Show_2015_1.jpg", commonsSearch: "Kawasaki Ninja H2", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Kawasaki_Ninja_H2_at_the_Tokyo_Motor_Show_2015_1.jpg?width=1000" },
+                    { label: "Ninja H2R Carbon Track", commonsFile: "File:Kawasaki_Ninja_H2R_Seattle_international_motorcycle_show.jpg", commonsSearch: "Kawasaki Ninja H2R", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Kawasaki_Ninja_H2R_Seattle_international_motorcycle_show.jpg?width=1000" }
+                ],
+                specPower: "228–310 HP (326 HP w/ Ram Air)",
+                specArch: "998cc Centrifugal Supercharged Inline-4",
+                specPerf: "2.5s 0-100 km/h | 400 km/h Top Speed",
+                specTier: "Hypersport Forced Induction",
+                summary: "A joint engineering tour de force across Kawasaki Heavy Industries' Gas Turbine, Aerospace, and Motorcycle divisions: a 998cc inline-4 spinning a billet centrifugal supercharger at 130,000+ RPM.",
+                content: `In-House Centrifugal Supercharger & Planetary Gear Train:\nUnlike aftermarket turbo motorcycles that suffer from severe exhaust heat soak and lag, the Kawasaki Ninja H2 (street) and track-only Ninja H2R use a proprietary centrifugal supercharger designed with Kawasaki's Gas Turbine & Machinery division.\n• 9.2x Crankshaft Step-Up Ratio: Driven off the crankshaft via a compact planetary gear train (1.15x primary step-up + 8.0x planetary gear), the 6-blade/12-blade forged aluminum impeller forged on a 5-axis CNC mill spins at up to 130,000 RPM when the engine reaches its 14,000 RPM redline.\n• Airflow & Boost Pressure: The supercharger pumps over 200 liters of air per second at up to 2.4 bar (34.8 psi) of boost without requiring an bulky intercooler, relying instead on a high-thermal-conductivity aluminum intake chamber and dual fuel injectors per cylinder (including top-feed shower injectors that cool the incoming charge via latent heat of vaporization).\n\nChassis, Aerodynamics & MotoGP Dog-Ring Transmission:\n• High-Tensile Steel Trellis Frame: Rather than a rigid aluminum twin-spar frame that could feel overly stiff at 350+ km/h, Kawasaki engineered a lightweight open-lattice steel trellis frame with a single-sided swingarm mounting directly to the engine crankcase, allowing controlled lateral flex and high-speed stability.\n• Kawasaki Aerospace Carbon Winglets (H2R): On the 310 HP (326 HP with Ram Air) H2R, upper and lower carbon-fiber airfoils replace the street mirrors to generate critical front-axle downforce above 300 km/h—proven when Kenan Sofuoğlu reached 400 km/h (250 mph) in 26 seconds across the Osman Gazi Bridge.\n• Dog-Ring 6-Speed Gearbox: Uses MotoGP-style dog engagement rings rather than traditional sliding gears for instantaneous, seamless full-throttle upshifts.`
+            },
+            {
+                id: "ducati-panigale-v4r-desmo",
+                commonsFile: "File:Ducati_Panigale_V4_S_01.jpg",
+                commonsSearch: "Ducati Panigale V4 red",
+                wikiTitle: "Ducati_Panigale_V4",
+                title: "Ducati Panigale V4 R — Desmosedici Stradale & Counter-Rotating Crankshaft",
+                category: "Motorcycles",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Ducati_Panigale_V4_S_01.jpg?width=1000",
+                gallery: [
+                    { label: "Panigale V4 S / R Profile", commonsFile: "File:Ducati_Panigale_V4_S_01.jpg", commonsSearch: "Ducati Panigale V4 S", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Ducati_Panigale_V4_S_01.jpg?width=1000" },
+                    { label: "Panigale V4 Track", commonsFile: "File:Ducati_Panigale_V4.jpg", commonsSearch: "Ducati Panigale V4", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Ducati_Panigale_V4.jpg?width=1000" }
+                ],
+                specPower: "214–240.5 HP @ 15,500 RPM",
+                specArch: "998cc / 1,103cc 90° V4 Desmodromic",
+                specPerf: "16,500 RPM Redline (6th Gear)",
+                specTier: "MotoGP-Derived Homologation",
+                summary: "Derived directly from Ducati's Desmosedici GP prototype: a 90-degree V4 featuring Desmodromic mechanical valve closure, a 'Twin Pulse' firing order, and a MotoGP counter-rotating crankshaft.",
+                content: `Desmosedici Stradale & Stradale R Architecture:\nTransitioning from decades of iconic L-twin superbikes (916, 1098, 1199/1299 Panigale), Ducati engineered the Panigale V4 around the 81mm MotoGP cylinder bore. While standard V4 and V4 S models displace 1,103cc (214 HP) for rich street torque, the WorldSBK homologation **Panigale V4 R** features a short-stroke 998cc Desmosedici Stradale R engine with gun-drilled titanium connecting rods and DLC-coated pistons.\n• 16,500 RPM Redline & 240.5 HP Output: The V4 R revs to 16,000 RPM in the first five gears and 16,500 RPM in 6th gear, producing 218 HP in Euro-5 trim and a staggering 237 HP (240.5 HP with Ducati Corse Rve racing oil) when fitted with the full titanium Akrapovič racing exhaust.\n\nThree MotoGP Engineering Secrets on the Street:\n1. Counter-Rotating Crankshaft: Whereas conventional motorcycle crankshafts spin forward (in the same direction as the wheels), the Panigale V4's crankshaft spins backwards. This counteracts the gyroscopic inertia of the wheels during rapid side-to-side chicanes and produces an anti-wheelie reaction torque under hard acceleration.\n2. Desmodromic Valve System: At 16,500 RPM, conventional valve springs cannot close valves fast enough without risking catastrophic valve float. Ducati uses a dedicated closing cam lobe and rocker arm to mechanically pull each valve shut with zero spring bounce.\n3. 70° Crankpin Offset ("Twin Pulse" Firing Order): Firing at 0°, 90°, 290°, and 380°, the left-hand cylinders fire almost simultaneously followed by the right-hand cylinders, mimicking the tractable tire-grip recovery of a big-bang MotoGP engine.`
+            },
+            {
+                id: "bmw-s1000rr-m1000rr-shiftcam",
+                commonsFile: "File:BMW_S1000RR_Studio.JPG",
+                commonsSearch: "BMW S1000RR motorcycle",
+                wikiTitle: "BMW_S1000RR",
+                title: "BMW S1000RR & M1000RR — ShiftCam Variable Valvetrain & WSBK Aero",
+                category: "Motorcycles",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/BMW_S1000RR_Studio.JPG?width=1000",
+                gallery: [
+                    { label: "S1000RR Studio Profile", commonsFile: "File:BMW_S1000RR_Studio.JPG", commonsSearch: "BMW S1000RR Studio", url: "https://commons.wikimedia.org/wiki/Special:FilePath/BMW_S1000RR_Studio.JPG?width=1000" }
+                ],
+                specPower: "205–212 HP @ 14,500 RPM",
+                specArch: "999cc DOHC Inline-4 w/ BMW ShiftCam",
+                specPerf: "80.0mm Bore x 49.7mm Stroke",
+                specTier: "Superbike Class Benchmark",
+                summary: "The liter-bike that rewrote inline-4 superbike standards: combining an extreme 80mm oversquare bore, hollow titanium valves, and BMW ShiftCam 10-millisecond variable intake cam profiles.",
+                content: `How the S1000RR Revolutionized the Liter-Bike Segment:\nWhen BMW Motorrad launched the S1000RR in 2009, it stunned the established Japanese "Big Four" by pairing class-leading top-end horsepower with dynamic traction control (DTC), ABS Pro, and an extreme oversquare 80.0mm x 49.7mm bore-and-stroke architecture.\n\nBMW ShiftCam Technology (Variable Valve Timing & Lift):\nTo solve the classic supersport trade-off between mid-range corner-exit torque and screaming 14,600 RPM top-end power, later-generation S1000RR and M1000RR models incorporate **BMW ShiftCam**:\n• Dual-Profile Intake Camshaft: The intake camshaft features two axial cam lobes per valve—a partial-load cam profile optimized for smooth combustion and strong low-to-mid RPM torque, and a full-load high-lift cam profile for maximum volumetric efficiency above 9,000 RPM.\n• 10-Millisecond Actuation: An electromechanical actuator pin engages a helical shift gate on the spinning camshaft, sliding the cam segment axially in just 10 milliseconds at 9,000 RPM.\n\nM1000RR Homologation Upgrades:\n• Engine Internals: The M1000RR ("M RR") raises compression to 13.5:1 with 2-ring forged Mahle pistons, lighter Pankl titanium connecting rods, narrowerfinger followers, and variable-length intake funnels—pushing output to 212 HP at 14,500 RPM with a 15,100 RPM redline.\n• Wind-Tunnel Winglets: Carbon-fiber M winglets generate up to 22.6 kg (50 lbs) of aerodynamic downforce at 300 km/h, suppressing front-wheel lift so the ECU doesn't have to cut ignition power on corner exit.`
+            },
+            {
+                id: "nissan-350z-z33",
+                commonsFile: "File:Nissan_350Z_R.jpg",
+                commonsSearch: "Nissan 350Z Z33 coupe",
+                wikiTitle: "Nissan_350Z",
+                title: "Nissan 350Z (Fairlady Z Z33) — VQ35DE vs. VQ35HR",
+                category: "Cars & Trucks",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_350Z_R.jpg?width=1000",
+                gallery: [
+                    { label: "350Z (Z33 Track/Road)", commonsFile: "File:Nissan_350Z_R.jpg", commonsSearch: "Nissan 350Z R", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_350Z_R.jpg?width=1000" },
+                    { label: "350Z Z33 Coupe Profile", commonsFile: "File:Nissan_350Z_coupe.jpg", commonsSearch: "Nissan 350Z coupe", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_350Z_coupe.jpg?width=1000" }
+                ],
+                specPower: "287 – 306 HP @ 6,800 RPM",
+                specArch: "3.5L V6 (VQ35DE / VQ35HR)",
+                specPerf: "5.2s 0-100 km/h | RWD 6-MT",
+                specTier: "2003–2008 Z33 Coupe",
+                summary: "The fifth-generation Z-car revitalized Nissan's sports division with a rigid FM (Front Midships) chassis, near 53:47 weight distribution, and the legendary VQ 60-degree V6.",
+                content: `Engineering Architecture & Chassis Design:\nThe Z33 Nissan 350Z (known as the Fairlady Z in Japan) is built on Nissan's FM (Front Midships) platform, placing the VQ35 3.5-liter V6 engine behind the front axle centerline. This layout produces an ideal 53/47 front-to-rear weight balance, sharp turn-in response, and predictable rear-wheel-drive handling.\n\nEngine Evolution across Production Years:\n• 2003–2005 (VQ35DE): 287 HP and 274 lb-ft of torque. Known for stout mid-range torque and a 6,600 RPM redline.\n• 2005 35th Anniversary & 2006 (VQ35DE Rev-Up): 300 HP with dual variable valve timing (intake & exhaust) and an increased 7,000 RPM redline.\n• 2007–2008 (VQ35HR "High Revolution"): Identifiable by its dual-intake symmetrical hood bulge. Roughly 80% of the internal components were strengthened, featuring a taller deck height, longer connecting rods, dual throttle bodies, and a thrilling 7,500 RPM fuel cut delivering 306 SAE net horsepower.\n\nDrivetrain & Tuning Potential:\nPaired with either a close-ratio 6-speed manual (CD009 later-revision synchros are prized across the drift and time-attack world) or a 5-speed automatic, Track and Grand Touring trims added Brembo 4-piston front calipers, lightweight forged Rays Engineering wheels, and a viscous limited-slip differential (VLSD).`
+            },
+            {
+                id: "honda-nsx-na1-nc1",
+                commonsFile: "File:Honda_NSX.jpg",
+                commonsSearch: "Honda NSX NA1 red",
+                wikiTitle: "Honda_NSX",
+                title: "Honda / Acura NSX — NA1 All-Aluminum Icon vs. NC1 Hybrid",
+                category: "Cars & Trucks",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Honda_NSX.jpg?width=1000",
+                gallery: [
+                    { label: "1st Gen NA1 (Pop-Up Headlights)", commonsFile: "File:Honda_NSX.jpg", commonsSearch: "Honda NSX NA1", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Honda_NSX.jpg?width=1000" },
+                    { label: "2nd Gen NC1 (Twin-Turbo Hybrid)", commonsFile: "File:Acura-NSX.jpg", commonsSearch: "Acura NSX NC1", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Acura-NSX.jpg?width=1000" }
+                ],
+                specPower: "270 HP (NA1) / 573–600 HP (NC1)",
+                specArch: "3.0L VTEC V6 vs. 3.5L Twin-Turbo + 3-Motor Hybrid",
+                specPerf: "5.0s (NA1) vs. 2.9s (NC1 Type S)",
+                specTier: "Mid-Engine Halo Supercar",
+                summary: "Two generations of Japanese mid-engine mastery: the titanium-rod 8,000 RPM NA1 developed with Ayrton Senna's input versus the tri-motor torque-vectoring NC1 hybrid.",
+                content: `First Generation (NA1 / NA2, 1990–2005):\nThe original NSX ("New Sportscar Experimental") was the world's first production car to feature an all-aluminum monocoque chassis, saving nearly 200 kg over equivalent steel construction.\n• Powertrain: 3.0L C30A V6 (later 3.2L C32B in NA2) featuring VTEC variable valve timing and forged titanium connecting rods, enabling an 8,000 RPM redline.\n• Ergonomics & Dynamics: Inspired by an F-16 fighter jet canopy for 360-degree visibility, with final chassis stiffness and suspension compliance honed at Suzuka and the Nürburgring by Formula 1 champion Ayrton Senna.\n\nSecond Generation (NC1, 2016–2022):\nReimagined as a technological showcase, the NC1 pairs a dry-sump 75-degree 3.5L twin-turbocharged V6 with a 9-speed dual-clutch transmission (DCT) and Honda's Sport Hybrid SH-AWD system.\n• Tri-Motor Torque Vectoring: One direct-drive electric motor sits between the engine and transmission to eliminate turbo lag, while a Twin Motor Unit (TMU) on the front axle independently applies positive or negative torque to the left and right front wheels during cornering.\n• NC1 Type S Finale: Boosted output to 600 HP and 492 lb-ft with larger turbos derived from the NSX GT3 Evo race car.`
+            },
+            {
+                id: "dodge-challenger-vs-charger",
+                commonsFile: "File:Dodge_Challenger_.jpg",
+                commonsSearch: "Dodge Challenger SRT coupe",
+                wikiTitle: "Dodge_Challenger",
+                title: "Dodge Challenger vs. Charger — LX/LD Platform & HEMI V8 Guide",
+                category: "Cars & Trucks",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Dodge_Challenger_.jpg?width=1000",
+                gallery: [
+                    { label: "Dodge Challenger (2-Door Coupe)", commonsFile: "File:Dodge_Challenger_.jpg", commonsSearch: "Dodge Challenger coupe", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Dodge_Challenger_.jpg?width=1000" },
+                    { label: "Dodge Charger SRT Hellcat (4-Door)", commonsFile: "File:Dodge_Charger_SRT_Hellcat.jpg", commonsSearch: "Dodge Charger SRT Hellcat", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Dodge_Charger_SRT_Hellcat.jpg?width=1000" }
+                ],
+                specPower: "375 HP (5.7L) to 797+ HP (SRT Redeye)",
+                specArch: "HEMI Pushrod V8 (5.7L / 6.4L 392 / 6.2L Supercharged)",
+                specPerf: "3.4s – 5.1s | ZF 8HP TorqueFlite / Tremec 6-MT",
+                specTier: "American Modern Muscle",
+                summary: "Comparing Dodge's two-door retro coupe (LA platform) and four-door Widebody muscle sedan (LD platform): wheelbase geometry, aerodynamics, and HEMI V8 tiers.",
+                content: `Shared DNA, Distinct Missions:\nWhile both the Dodge Challenger and Dodge Charger share Chrysler's rear-wheel-drive LX/LD/LA architecture (incorporating Mercedes-Benz W211 5-link rear suspension geometry and W220 control arm design heritage), they cater to different driving styles:\n\n1. Chassis & Wheelbase Differences:\n• Dodge Challenger (2-Door Coupe): Rides on a slightly shorter 116.2-inch wheelbase. Importantly, the Challenger was offered with the Tremec TR-6060 6-speed manual transmission on R/T, Scat Pack 392, and SRT Hellcat trims.\n• Dodge Charger (4-Door Sedan): Rides on a 120.2-inch wheelbase with sleeker aerodynamic drag coefficients and exclusively pairs its V8 engines with the lightning-fast TorqueFlite 8HP70/8HP90 8-speed automatic.\n\n2. Powertrain Hierarchy:\n• R/T (5.7L Eagle HEMI): 370–375 HP — everyday street torque and classic V8 exhaust note.\n• Scat Pack (6.4L / 392 Apache HEMI): 485 HP and 475 lb-ft naturally aspirated. Includes Brembo brakes and launch control.\n• SRT Hellcat & Redeye (6.2L Supercharged HEMI): Uses a 2.4L (Hellcat) or 2.7L (Redeye/Jailbreak) twin-screw IHI supercharger delivering 717 to 807 HP.`
+            },
+            {
+                id: "ram-1500-trx-supercharged",
+                commonsFile: "File:Ram_1500_TRX.jpg",
+                commonsSearch: "Ram 1500 TRX pickup",
+                wikiTitle: "Ram_pickup",
+                title: "Ram 1500 TRX — 6.2L Supercharged HEMI Trophy Truck Engineering",
+                category: "Cars & Trucks",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Ram_1500_TRX.jpg?width=1000",
+                specPower: "702 HP & 650 lb-ft Torque",
+                specArch: "6.2L Supercharged HEMI V8 + Bilstein e2 Hawk",
+                specPerf: "4.5s 0-100 km/h | 11.8-inch Ground Clearance",
+                specTier: "Apex Predator Off-Road Truck",
+                summary: "How Ram engineered a 702-horsepower supercharged Hellcat V8 into a high-speed desert runner with 13+ inches of suspension travel and Bilstein Black Hawk e2 adaptive dampers.",
+                content: `Powertrain & Induction Cooling:\nAt the heart of the Ram 1500 TRX is the 6.2-liter supercharged HEMI V8 rated at 702 horsepower and 650 lb-ft of torque. Because desert running subjects engines to extreme dust and heat, Ram engineered a dual-path induction system drawing air from both the functional hood scoop and the oversized front grille into a massive 29-liter airbox with twin heavy-duty filters.\n\nFrame & Suspension Telemetry:\n• High-Strength Hydroformed Frame: 74% different from a standard Ram 1500, utilizing thicker high-strength steel to withstand violent off-road jump landings.\n• Bilstein Black Hawk e2 Adaptive Dampers: Nitrogen-charged remote-reservoir shocks with dual electronic proportional valves that continuously adjust compression and rebound damping in milliseconds. Includes a "Jump Detection" algorithm that senses when all four wheels leave the ground and spikes damping force by up to 1,000 kg per corner to prevent bottoming out.\n• Dana 60 Solid Rear Axle: Full-floating rear axle with an electronic locking differential and 14 inches of rear wheel travel paired with 35-inch Goodyear Wrangler Territory all-terrain tires.`
+            },
+            {
+                id: "high-revving-inline4-motorcycles",
+                commonsFile: "File:Yamaha_YZF-R1_2007.jpg",
+                commonsSearch: "Yamaha YZF-R1 superbike",
+                wikiTitle: "Yamaha_YZF-R1",
+                title: "Supersport Inline-4 & V4 Motorcycles — 16,000+ RPM Valve Trains",
+                category: "Motorcycles",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Yamaha_YZF-R1_2007.jpg?width=1000",
+                gallery: [
+                    { label: "Yamaha YZF-R1 Crossplane", commonsFile: "File:Yamaha_YZF-R1_2007.jpg", commonsSearch: "Yamaha YZF-R1", url: "https://commons.wikimedia.org/wiki/Special:FilePath/Yamaha_YZF-R1_2007.jpg?width=1000" }
+                ],
+                specPower: "200+ HP / Liter Specific Output",
+                specArch: "Short-Stroke DOHC w/ Titanium Finger Followers",
+                specPerf: "2.6s 0-100 km/h | 6-Axis IMU Telemetry",
+                specTier: "Liter-Class & 600cc Supersport",
+                summary: "Inside the mechanical wizardry of modern sportbikes: oversquare bore-to-stroke ratios, DLC-coated finger followers, variable intake stacks, and 6-axis inertial measurement units.",
+                content: `How Motorcycles Achieve 14,000 to 16,500+ RPM Safely:\nWhile most passenger car engines hit a mechanical ceiling around 6,500–7,500 RPM due to piston speed limits and valve float, modern supersport motorcycles (such as the Yamaha YZF-R6/R1, Kawasaki ZX-10R, BMW S1000RR, and Ducati Panigale V4) routinely operate between 14,500 and 16,500 RPM.\n\nKey Mechanical Enablers:\n1. Extreme Oversquare Bore-to-Stroke Ratio: A BMW S1000RR uses an 80.0 mm bore with a tiny 49.7 mm stroke. The short stroke keeps mean piston speeds below critical structural limits even at 14,600 RPM, while the wide bore makes room for four large titanium intake and exhaust valves.\n2. Finger-Follower Valvetrains & Desmodromic Actuation: Lightweight DLC-coated (Diamond-Like Carbon) pivoting finger followers reduce reciprocating mass over traditional bucket tappets, preventing valve bounce at extreme RPM. Ducati's Desmodromic system mechanically closes valves with a dedicated lobe and rocker rather than relying solely on coil springs.\n3. 6-Axis IMU Electronics: Modern superbikes monitor pitch, roll, and yaw 100+ times per second, managing lean-sensitive traction control, slide control, wheelie mitigation, and bi-directional quickshifters.`
+            },
+            {
+                id: "turbo-vs-supercharger-tech",
+                commonsFile: "File:Turbocharger.jpg",
+                commonsSearch: "Turbocharger cutaway",
+                wikiTitle: "Turbocharger",
+                title: "Forced Induction Engineering — Turbocharging vs. Supercharging",
+                category: "Auto Tech & EV",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Turbocharger.jpg?width=1000",
+                specPower: "+35% to +100% Volumetric Efficiency",
+                specArch: "Exhaust-Driven Turbine vs. Crank-Driven Compressor",
+                specPerf: "Adiabatic Efficiency: 70–78% (Turbo)",
+                specTier: "Powertrain Thermodynamics",
+                summary: "A thermodynamic breakdown of twin-scroll turbochargers, variable geometry turbines (VGT), Roots/Twin-Screw positive displacement blowers, and centrifugal superchargers.",
+                content: `The Core Goal of Forced Induction:\nAn internal combustion engine is fundamentally an air pump. Compressing intake air increases oxygen density inside the combustion chamber, allowing the ECU to inject proportionally more fuel per stroke.\n\n1. Turbocharging (Exhaust Gas Energy Recovery):\n• Mechanism: Uses wasted enthalpy and kinetic energy from hot exhaust gases to spin a turbine wheel up to 150,000–250,000 RPM, which is connected via a shared shaft to a compressor wheel on the intake side.\n• Advantages: Higher thermal and fuel efficiency because it harvests energy that would otherwise exit the tailpipe. Twin-scroll housings and ball-bearing cartridges dramatically reduce modern turbo lag.\n• Trade-off: Requires exhaust manifold packaging, wastegates, blow-off/recirculation valves, and air-to-air or air-to-water intercoolers to combat heat soak.\n\n2. Supercharging (Mechanical Crankshaft Drive):\n• Positive Displacement (Roots & Twin-Screw): Delivers a fixed volume of air per revolution. Produces instant off-idle torque with zero lag (used on the Dodge Hellcat, Ram TRX, and Mustang Shelby GT500).\n• Centrifugal Superchargers: Uses a belt-driven planetary step-up gearset spinning a turbo-style compressor wheel; boost rises exponentially with engine RPM.\n• Trade-off: Parasitic crank loss—a large V8 supercharger can consume 60 to 100+ horsepower from the crankshaft just to turn the rotors at redline.`
+            },
+            {
+                id: "ecu-tuning-fuel-maps",
+                commonsFile: "File:Engine_control_unit.jpg",
+                commonsSearch: "Automotive Engine Control Unit",
+                wikiTitle: "Engine_control_unit",
+                title: "ECU Remapping & Engine Calibration — AFR, Ignition Timing & Boost",
+                category: "Auto Tech & EV",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Engine_control_unit.jpg?width=1000",
+                specPower: "Stage 1 / Stage 2 / Standalone EMS",
+                specArch: "3D Volumetric Efficiency & Spark Advance Tables",
+                specPerf: "Stoichiometric 14.7:1 vs. WOT Power Enrichment",
+                specTier: "Motorsport & Street Calibration",
+                summary: "How Engine Control Units calculate fuel injector pulse width, spark advance prior to Top Dead Center (BTDC), knock-sensor retard, and closed-loop wideband lambda targets.",
+                content: `Inside the Modern Engine Control Unit (ECU):\nModern engines rely on real-time microcontrollers reading Mass Air Flow (MAF) or Manifold Absolute Pressure (MAP) sensors, crank/cam Hall-effect sensors, wideband O2 sensors, and piezoelectric knock sensors.\n\nThe Three Pillars of Calibration:\n1. Air-Fuel Ratio (AFR / Lambda):\nFor gasoline, stoichiometric combustion occurs at 14.7 parts air to 1 part fuel (Lambda = 1.00), ideal for low-load cruising and catalytic converter efficiency. Under Wide Open Throttle (WOT), tuners command richer mixtures—typically 12.5:1 to 12.8:1 on naturally aspirated engines and 11.2:1 to 11.8:1 on turbocharged engines—to cool combustion chambers and suppress detonation (knock).\n2. Ignition Timing Advance (Degrees BTDC):\nBecause the air-fuel mixture takes roughly 2 milliseconds to burn completely, the spark plug must fire Before Top Dead Center (BTDC) so peak cylinder pressure occurs around 12–15 degrees After Top Dead Center (ATDC) for maximum mechanical leverage on the crank journal.\n3. Electronic Boost Control:\nOn turbocharged cars, altering PWM wastegate duty cycle tables alongside octane-specific ignition maps yields massive power gains (often +40 to +90 HP on a Stage 1 flash tune alone).`
+            },
+            {
+                id: "solid-state-ev-battery-tech",
+                commonsFile: "File:Electric_vehicle_battery_pack.jpg",
+                commonsSearch: "Electric vehicle battery pack",
+                wikiTitle: "Electric_vehicle_battery",
+                title: "800V EV Architectures & Solid-State Battery Chemistry",
+                category: "Auto Tech & EV",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/Electric_vehicle_battery_pack.jpg?width=1000",
+                specPower: "350 kW+ DC Fast Charging",
+                specArch: "800V SiC Inverters & Solid Electrolyte Cells",
+                specPerf: "400–500 Wh/kg Projected Energy Density",
+                specTier: "Next-Gen Electric Propulsion",
+                summary: "Why high-performance EVs are transitioning from 400V to 800V Silicon Carbide (SiC) power electronics, and how solid-state electrolytes double gravimetric energy density.",
+                content: `400V vs. 800V High-Voltage Architectures:\nBy doubling pack voltage from 400V to 800V (seen in platforms like the Porsche Taycan, Hyundai E-GMP, and Lucid Air uses 900V+), an EV can deliver the same power at half the electrical current (P = V × I).\n• Halving current reduces resistive heat losses (I²R) by a factor of four.\n• Allows thinner, lighter copper wiring harnesses across the chassis and sustained 270–350 kW charging speeds (10% to 80% State of Charge in under 18 minutes).\n\nSilicon Carbide (SiC) MOSFET Inverters:\nReplacing traditional silicon IGBTs with Silicon Carbide MOSFETs in the traction inverter reduces switching losses at high frequencies and improves real-world driving range by 5% to 8%.\n\nThe Solid-State Horizon:\nConventional Lithium-ion (NMC and LFP) cells rely on a flammable liquid electrolyte. Solid-state batteries replace this liquid with a solid ceramic, sulfide, or polymer electrolyte separator, enabling the use of a pure lithium-metal anode. This breakthrough raises cell energy density from ~260 Wh/kg to 400–500 Wh/kg while virtually eliminating thermal runaway risk.`
+            },
+            {
+                id: "gpu-comparison-rx6600-1660ti-rx580",
+                commonsFile: "File:AMD_Radeon_RX_6600_XT.jpg",
+                commonsSearch: "Radeon RX 6600 XT graphics card",
+                wikiTitle: "Radeon_RX_6000_series",
+                title: "1080p Value GPU Showdown — Radeon RX 6600 vs. GTX 1660 Ti vs. RX 580",
+                category: "PC & Silicon",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/AMD_Radeon_RX_6600_XT.jpg?width=1000",
+                specPower: "132W (RX 6600) / 120W (1660 Ti) / 185W (RX 580)",
+                specArch: "RDNA 2 (7nm) vs. Turing (12nm) vs. Polaris (14nm)",
+                specPerf: "8GB GDDR6 (RX 6600) vs. 6GB GDDR6 (1660 Ti)",
+                specTier: "1080p High/Ultra Gaming Hardware",
+                summary: "Architectural and frame-per-watt breakdown of three legendary budget/mainstream GPUs: why AMD's RDNA 2 Infinity Cache on the RX 6600 dominates efficiency.",
+                content: `Architectural Generational Leap:\nWhen building or upgrading a 1080p gaming rig, comparing the Radeon RX 6600, GeForce GTX 1660 Ti, and Radeon RX 580 8GB highlights how fabrication node shrinks and cache hierarchy transform performance-per-watt:\n\n1. AMD Radeon RX 6600 (Navi 23 — TSMC 7nm, RDNA 2):\n• Specs: 1,792 Stream Processors, 8GB GDDR6 on a 128-bit bus augmented by 32MB of ultra-fast Infinity Cache, 132W Board Power.\n• Verdict: The undisputed 1080p efficiency king in this trio. It delivers roughly 30–35% higher rasterized frame rates than the GTX 1660 Ti and nearly 65–75% more performance than the aging RX 580 while drawing 50W less power than Polaris. Includes full DirectX 12 Ultimate (Mesh Shaders, hardware Ray Tracing support).\n\n2. NVIDIA GeForce GTX 1660 Ti (TU116 — TSMC 12nm, Turing):\n• Specs: 1,536 CUDA Cores, 6GB GDDR6 on a 192-bit bus (288 GB/s bandwidth), 120W TDP.\n• Verdict: Lacks the RT and Tensor cores of the RTX 20-series, making it a pure rasterization card. Beats the RX 580 by ~25–30% at a cool 120W, though its 6GB VRAM buffer can require texture quality adjustments in modern AAA titles.\n\n3. AMD Radeon RX 580 8GB (Polaris 20 — 14nm FinFET):\n• Specs: 2,304 Stream Processors, 8GB GDDR5 (256-bit bus), 185W TDP.\n• Verdict: A hall-of-fame 2017 legend that served budget gamers for years thanks to its generous 8GB VRAM, but now operates on legacy driver branches and consumes significantly more power per frame.`
+            },
+            {
+                id: "amd-ryzen-apu-5600g-vs-8600g",
+                commonsFile: "File:AMD_Ryzen_5_3600_processor.jpg",
+                commonsSearch: "AMD Ryzen processor die",
+                wikiTitle: "Ryzen",
+                title: "AMD Ryzen APU Architecture — Ryzen 5 5600G (Zen 3) vs. Ryzen 5 8600G (Zen 4 + RDNA 3)",
+                category: "PC & Silicon",
+                image: "https://commons.wikimedia.org/wiki/Special:FilePath/AMD_Ryzen_5_3600_processor.jpg?width=1000",
+                specPower: "65W TDP (6 Cores / 12 Threads)",
+                specArch: "AM4 Cezanne (Vega 7) vs. AM5 Phoenix (Radeon 760M)",
+                specPerf: "DDR4 Bandwidth vs. Dual-Channel DDR5-6000+",
+                specTier: "Integrated Graphics Core",
+                summary: "How monolithic APU dies blend high-clock CPU cores with integrated Radeon compute units, and why DDR5 memory bandwidth unlocks 1080p gaming on the Ryzen 5 8600G.",
+                content: `What Makes an AMD "G-Series" APU Different from Standard Ryzen Desktop CPUs?\nUnlike chiplet-based Ryzen desktop processors (which use separate CCD core dies and an I/O die), AMD's G-series APUs (Accelerated Processing Units) are built on a single monolithic die originally engineered for high-efficiency laptops. This enables low-latency interconnects between the CPU cores and the onboard Radeon graphics engine.\n\n1. Ryzen 5 5600G (Socket AM4 — "Cezanne" 7nm):\n• CPU: 6 Zen 3 Cores / 12 Threads, up to 4.4 GHz boost, 16MB L3 Cache, PCIe 3.0.\n• iGPU: Radeon Vega 7 (7 Compute Units @ 1900 MHz).\n• Best For: Ultra-affordable AM4 office workstations, home servers, and light esports (Valorant, CS2, League of Legends) at 720p/1080p Low-Medium without a discrete GPU.\n\n2. Ryzen 5 8600G (Socket AM5 — "Phoenix" 4nm):\n• CPU: 6 Zen 4 Cores / 12 Threads, up to 5.0 GHz boost, 16MB L3 Cache, dedicated Ryzen AI NPU.\n• iGPU: Radeon 760M (8 RDNA 3 Compute Units @ 2800 MHz).\n• Memory Scaling: Because APUs use system RAM as video memory (VRAM), pairing the 8600G with dual-channel DDR5-6000 or DDR5-6400 RAM more than doubles memory bandwidth over DDR4, allowing the Radeon 760M iGPU to rival a discrete GTX 1650 in modern 1080p gaming.`
+            }
+        ];
+
+        // ============================================================================
+        // 2. APPLICATION STATE & LOCALSTORAGE INITIALIZATION (v10 Exact Photo Fix)
+        // ============================================================================
+        const STORAGE_KEY_ENTRIES  = "apex_core_db_v10";
+        const STORAGE_KEY_CONFIG   = "apex_core_config_v10";
+        const STORAGE_KEY_FEEDBACK = "apex_core_feedback_v10";
+
+        let entries = [];
+        let siteConfig = {};
+        let feedbackList = [];
+        let currentCategory = "ALL";
+        let currentSearch = "";
+        let isEditMode = false;
+        const wikiImageCache = {};
+
+        function loadDatabase() {
+            try {
+                // Clean up legacy v1 keys
+                localStorage.removeItem("apex_silicon_entries_v1");
+                localStorage.removeItem("apex_silicon_config_v1");
+
+                const savedEntriesV10 = localStorage.getItem(STORAGE_KEY_ENTRIES);
+                const savedEntriesPrev = localStorage.getItem("apex_core_db_v9") || localStorage.getItem("apex_core_db_v8") || localStorage.getItem("apex_core_db_v7");
+                const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG) || localStorage.getItem("apex_core_config_v9") || localStorage.getItem("apex_core_config_v8");
+                const savedFeedback = localStorage.getItem(STORAGE_KEY_FEEDBACK) || localStorage.getItem("apex_core_feedback_v9") || localStorage.getItem("apex_core_feedback_v8");
+
+                if (savedEntriesV10) {
+                    entries = JSON.parse(savedEntriesV10);
+                } else if (savedEntriesPrev) {
+                    entries = JSON.parse(savedEntriesPrev);
+                } else {
+                    entries = JSON.parse(JSON.stringify(DEFAULT_ENTRIES));
+                }
+
+                // Sync commonsFile, commonsSearch, wikiTitle, gallery, and clean out any cached wrong fallback URLs
+                entries = entries.map(item => {
+                    const freshDef = DEFAULT_ENTRIES.find(d => d.id === item.id);
+                    if (freshDef) {
+                        const isCustomUpload = item.image && item.image.startsWith("data:image");
+                        const hadWrongLamborghiniFallback = item.image && item.image.includes("photo-1544829099-b9a0c07fad1a");
+                        return {
+                            ...item,
+                            commonsFile: freshDef.commonsFile || item.commonsFile,
+                            commonsSearch: freshDef.commonsSearch || item.commonsSearch,
+                            wikiTitle: freshDef.wikiTitle || item.wikiTitle,
+                            image: (!savedEntriesV10 || hadWrongLamborghiniFallback) && !isCustomUpload ? freshDef.image : item.image,
+                            gallery: freshDef.gallery ? JSON.parse(JSON.stringify(freshDef.gallery)) : (item.gallery || [])
+                        };
+                    }
+                    return item;
+                });
+
+                for (let i = DEFAULT_ENTRIES.length - 1; i >= 0; i--) {
+                    const defItem = DEFAULT_ENTRIES[i];
+                    if (!entries.some(e => e.id === defItem.id)) {
+                        entries.unshift(JSON.parse(JSON.stringify(defItem)));
+                    }
+                }
+
+                localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+                siteConfig = savedConfig ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(savedConfig) } : JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG));
+                feedbackList = savedFeedback ? JSON.parse(savedFeedback) : JSON.parse(JSON.stringify(DEFAULT_FEEDBACK));
+                localStorage.setItem(STORAGE_KEY_FEEDBACK, JSON.stringify(feedbackList));
+            } catch (err) {
+                console.error("Failed to read from localStorage, falling back to default dataset:", err);
+                entries = JSON.parse(JSON.stringify(DEFAULT_ENTRIES));
+                siteConfig = JSON.parse(JSON.stringify(DEFAULT_SITE_CONFIG));
+                feedbackList = JSON.parse(JSON.stringify(DEFAULT_FEEDBACK));
+            }
+        }
+
+        // ============================================================================
+        // 2B. EXACT WIKIMEDIA COMMONS `imageinfo` + NAMESPACE-6 FILE SEARCH RESOLVER
+        //     Guarantees every car & bike model resolves to its exact real photo!
+        // ============================================================================
+        async function searchWikimediaCommonsPhoto(searchQuery) {
+            if (!searchQuery) return null;
+            const cacheKey = "commons_search:" + searchQuery;
+            if (wikiImageCache[cacheKey]) return wikiImageCache[cacheKey];
+
+            try {
+                const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(searchQuery + " filetype:bitmap")}&gsrlimit=5&prop=imageinfo&iiprop=url&iiurlwidth=1000&format=json&origin=*`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    const pages = data?.query?.pages ? Object.values(data.query.pages) : [];
+                    pages.sort((a, b) => (a.index || 99) - (b.index || 99));
+                    for (const p of pages) {
+                        const ii = p?.imageinfo?.[0];
+                        const imgUrl = ii?.thumburl || ii?.url;
+                        if (imgUrl && !imgUrl.endsWith(".svg") && !imgUrl.endsWith(".pdf")) {
+                            wikiImageCache[cacheKey] = imgUrl;
+                            return imgUrl;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn("Wikimedia Commons search warning:", searchQuery, err);
+            }
+            return null;
+        }
+
+        async function fetchCommonsFileDirectUrl(commonsFileTitle, commonsSearchFallback = "") {
+            if (commonsFileTitle) {
+                const normalizedTitle = commonsFileTitle.startsWith("File:") ? commonsFileTitle : `File:${commonsFileTitle}`;
+                if (wikiImageCache[normalizedTitle]) return wikiImageCache[normalizedTitle];
+
+                try {
+                    const apiUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(normalizedTitle)}&prop=imageinfo&iiprop=url&iiurlwidth=1000&format=json&origin=*`;
+                    const res = await fetch(apiUrl);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const pages = data?.query?.pages || {};
+                        const firstPage = Object.values(pages)[0];
+                        const ii = firstPage?.imageinfo?.[0];
+                        const resolvedUrl = ii?.thumburl || ii?.url;
+                        if (resolvedUrl) {
+                            wikiImageCache[normalizedTitle] = resolvedUrl;
+                            return resolvedUrl;
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Wikimedia Commons imageinfo lookup warning:", normalizedTitle, err);
+                }
+            }
+
+            if (commonsSearchFallback) {
+                return searchWikimediaCommonsPhoto(commonsSearchFallback);
+            }
+            return null;
+        }
+
+        async function fetchWikiSummaryImage(wikiTitleOrQuery) {
+            if (!wikiTitleOrQuery) return null;
+            if (wikiImageCache[wikiTitleOrQuery]) return wikiImageCache[wikiTitleOrQuery];
+
+            if (wikiTitleOrQuery.startsWith("File:")) {
+                return fetchCommonsFileDirectUrl(wikiTitleOrQuery);
+            }
+
+            try {
+                const directUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitleOrQuery)}`;
+                const res = await fetch(directUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    const img = data?.thumbnail?.source || data?.originalimage?.source;
+                    if (img) {
+                        wikiImageCache[wikiTitleOrQuery] = img;
+                        return img;
+                    }
+                }
+            } catch (e) {
+                console.warn("Wikipedia summary lookup warning:", wikiTitleOrQuery, e);
+            }
+
+            // Fallback to Wikimedia Commons file search so we always get a real photo of that exact subject
+            return searchWikimediaCommonsPhoto(wikiTitleOrQuery.replace(/_/g, " "));
+        }
+
+        // Triggered automatically if any card/modal/comparison <img> fails to load
+        async function handleBrokenCardImage(imgEl, entryId) {
+            if (!imgEl || imgEl.dataset.fallbackAttempted === "true") {
+                if (imgEl) imgEl.src = "https://placehold.co/900x500/11131c/00f0ff?text=APEX+//+CORE";
+                return;
+            }
+            imgEl.dataset.fallbackAttempted = "true";
+
+            const item = entries.find(e => e.id === entryId);
+            let resolvedUrl = null;
+
+            // 1. Try exact Wikimedia Commons filename + specific model search query
+            if (item?.commonsFile || item?.commonsSearch) {
+                resolvedUrl = await fetchCommonsFileDirectUrl(item.commonsFile, item.commonsSearch || item.title.split("—")[0].trim());
+            }
+            // 2. Otherwise fallback to Wikipedia page summary or Commons search
+            if (!resolvedUrl) {
+                const lookupKey = item?.wikiTitle || item?.title?.split("—")[0]?.trim() || "";
+                resolvedUrl = await fetchWikiSummaryImage(lookupKey);
+            }
+
+            if (resolvedUrl) {
+                imgEl.src = resolvedUrl;
+                if (item) {
+                    item.image = resolvedUrl;
+                    localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+                }
+            } else {
+                imgEl.src = "https://placehold.co/900x500/11131c/00f0ff?text=APEX+//+CORE";
+            }
+        }
+
+        // Proactively verify & resolve exact Wikimedia Commons photos for all entries & gallery pills
+        async function repairAllPhotos(showUserToast = false) {
+            const icon = document.getElementById("repairPhotosIcon");
+            if (icon) icon.classList.add("fa-spin");
+            if (showUserToast) showToast("Verifying exact model & generation photos from Wikimedia Commons...");
+
+            await Promise.all(entries.map(async (item) => {
+                // Skip user local base64 uploads
+                if (item.image && item.image.startsWith("data:image")) return;
+
+                // Resolve each gallery pill's exact photo
+                if (Array.isArray(item.gallery)) {
+                    for (const g of item.gallery) {
+                        if (g.commonsFile || g.commonsSearch) {
+                            const exactGalleryUrl = await fetchCommonsFileDirectUrl(g.commonsFile, g.commonsSearch || g.label);
+                            if (exactGalleryUrl) g.url = exactGalleryUrl;
+                        } else if (g.wikiTitle) {
+                            const gImg = await fetchWikiSummaryImage(g.wikiTitle);
+                            if (gImg) g.url = gImg;
+                        }
+                    }
+                }
+
+                // Resolve the card's primary image using its exact commonsFile or commonsSearch
+                if (item.commonsFile) {
+                    const exactMainUrl = await fetchCommonsFileDirectUrl(item.commonsFile, item.commonsSearch || item.title.split("—")[0].trim());
+                    if (exactMainUrl) {
+                        item.image = exactMainUrl;
+                    }
+                } else if (showUserToast || !item.image || item.image.includes("placehold.co")) {
+                    const query = item.commonsSearch || item.wikiTitle || item.title.split("—")[0].trim();
+                    if (query) {
+                        const liveImg = await fetchWikiSummaryImage(query);
+                        if (liveImg) item.image = liveImg;
+                    }
+                }
+            }));
+
+            localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+            renderCards();
+            renderComparison();
+
+            if (icon) icon.classList.remove("fa-spin");
+            if (showUserToast) {
+                showToast(`Verified exact generation photos for all ${entries.length} entries!`);
+            }
+        }
+
+        function saveDatabase(toastText = "Changes saved to browser storage!") {
+            try {
+                localStorage.setItem(STORAGE_KEY_ENTRIES, JSON.stringify(entries));
+                localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(siteConfig));
+                localStorage.setItem(STORAGE_KEY_FEEDBACK, JSON.stringify(feedbackList));
+                updateTelemetryCounters();
+                if (toastText) showToast(toastText);
+            } catch (err) {
+                console.error("Error saving to localStorage:", err);
+            }
+        }
+
+        // ============================================================================
+        // 3. RENDER SITE CONFIG, CARDS GRID & TELEMETRY
+        // ============================================================================
+        function applySiteConfigToDOM() {
+            const fields = document.querySelectorAll("[data-site-field]");
+            fields.forEach(el => {
+                const key = el.getAttribute("data-site-field");
+                if (siteConfig[key]) {
+                    el.innerHTML = siteConfig[key];
+                }
+            });
+        }
+
+        function updateTelemetryCounters() {
+            const total = entries.length;
+            const pcCount = entries.filter(e => e.category === "PC & Silicon").length;
+            const autoCount = total - pcCount;
+
+            document.getElementById("statTotalCount").textContent = total;
+            document.getElementById("statAutoCount").textContent = autoCount;
+            document.getElementById("statTechCount").textContent = pcCount;
+            document.getElementById("statEditState").textContent = isEditMode ? "Editing Live" : "Synced";
+        }
+
+        function getCategoryBadgeClasses(category) {
+            switch (category) {
+                case "Cars & Trucks":
+                    return "bg-apex-red/20 text-apex-red border-apex-red/40";
+                case "Motorcycles":
+                    return "bg-amber-500/20 text-amber-300 border-amber-500/40";
+                case "Auto Tech & EV":
+                    return "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+                case "PC & Silicon":
+                    return "bg-apex-cyan/20 text-apex-cyan border-apex-cyan/40";
+                default:
+                    return "bg-slate-700 text-slate-200 border-slate-600";
+            }
+        }
+
+        function renderCards() {
+            const grid = document.getElementById("cardsGrid");
+            const emptyState = document.getElementById("emptyState");
+
+            const filtered = entries.filter(item => {
+                const matchesCat = currentCategory === "ALL" || item.category === currentCategory;
+                const query = currentSearch.trim().toLowerCase();
+                const matchesSearch = !query || 
+                    item.title.toLowerCase().includes(query) ||
+                    item.summary.toLowerCase().includes(query) ||
+                    item.content.toLowerCase().includes(query) ||
+                    item.specPower.toLowerCase().includes(query) ||
+                    item.specArch.toLowerCase().includes(query);
+                return matchesCat && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = "";
+                emptyState.classList.remove("hidden");
+                return;
+            }
+
+            emptyState.classList.add("hidden");
+
+            grid.innerHTML = filtered.map(item => {
+                const badgeStyle = getCategoryBadgeClasses(item.category);
+                const editableAttr = isEditMode ? 'contenteditable="true" data-editable="true"' : 'data-editable="true"';
+
+                return `
+                <article class="card-glow rounded-2xl bg-carbon-900/90 border border-carbon-700/80 overflow-hidden flex flex-col justify-between group">
+                    <div>
+                        <!-- Card Image Banner -->
+                        <div class="relative h-48 w-full bg-carbon-950 overflow-hidden">
+                            <img 
+                                id="cardImg-${item.id}"
+                                src="${escapeHtml(item.image)}" 
+                                alt="${escapeHtml(item.title)}" 
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-95"
+                                onerror="handleBrokenCardImage(this, '${item.id}')"
+                            >
+                            <div class="absolute inset-0 bg-gradient-to-t from-carbon-900 via-transparent to-black/30"></div>
+                            
+                            <!-- Category Pill -->
+                            <span class="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-mono uppercase tracking-wider border backdrop-blur-md ${badgeStyle}">
+                                ${escapeHtml(item.category)}
+                            </span>
+
+                            <!-- Multi-Model / Multi-Gen Photo Toggle Pills (if entry has gallery) -->
+                            ${item.gallery && item.gallery.length > 1 ? `
+                            <div class="absolute bottom-2.5 left-3 right-3 flex flex-wrap gap-1 z-10">
+                                ${item.gallery.map((g, idx) => {
+                                    const isActivePill = item.image === g.url || (item.commonsFile && g.commonsFile && item.commonsFile === g.commonsFile);
+                                    const pillClasses = isActivePill
+                                        ? "bg-apex-cyan text-carbon-950 font-bold border-apex-cyan shadow"
+                                        : "bg-carbon-950/85 hover:bg-apex-cyan hover:text-carbon-950 text-slate-200 border-carbon-700";
+                                    return `
+                                    <button 
+                                        type="button"
+                                        onclick="switchCardGalleryPhoto(event, '${item.id}', '${escapeHtml(g.url)}', '${escapeHtml(g.commonsFile || '')}', '${escapeHtml(g.commonsSearch || '')}', '${escapeHtml(g.label)}')"
+                                        class="px-2 py-0.5 rounded text-[10px] font-mono border transition backdrop-blur-md ${pillClasses}"
+                                    >${escapeHtml(g.label)}</button>
+                                    `;
+                                }).join("")}
+                            </div>
+                            ` : ""}
+
+                            <!-- Quick Admin Edit/Delete Controls on Card -->
+                            <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                                <button onclick="openEditorModal('${item.id}')" title="Edit Full Entry & Specs" class="w-8 h-8 rounded-lg bg-carbon-950/85 hover:bg-apex-cyan hover:text-carbon-950 text-white flex items-center justify-center border border-carbon-700 transition text-xs">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button onclick="promptDeleteEntry('${item.id}')" title="Delete Entry" class="w-8 h-8 rounded-lg bg-carbon-950/85 hover:bg-apex-red text-slate-300 hover:text-white flex items-center justify-center border border-carbon-700 transition text-xs">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="p-5 space-y-4">
+                            <h3 
+                                ${editableAttr}
+                                onblur="handleInlineCardEdit('${item.id}', 'title', this.innerText)"
+                                class="font-display font-bold text-lg sm:text-xl text-white leading-snug group-hover:text-apex-cyan transition-colors"
+                            >${escapeHtml(item.title)}</h3>
+
+                            <p 
+                                ${editableAttr}
+                                onblur="handleInlineCardEdit('${item.id}', 'summary', this.innerText)"
+                                class="text-slate-300 text-xs sm:text-sm leading-relaxed line-clamp-3"
+                            >${escapeHtml(item.summary)}</p>
+
+                            <!-- 2x2 Mini Telemetry Spec Box -->
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <div class="p-2.5 rounded-xl bg-carbon-950/90 border border-carbon-800">
+                                    <div class="text-[10px] font-mono uppercase text-slate-400">Power / Clock</div>
+                                    <div 
+                                        ${editableAttr}
+                                        onblur="handleInlineCardEdit('${item.id}', 'specPower', this.innerText)"
+                                        class="text-xs font-semibold text-white truncate mt-0.5"
+                                    >${escapeHtml(item.specPower)}</div>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-carbon-950/90 border border-carbon-800">
+                                    <div class="text-[10px] font-mono uppercase text-slate-400">Engine / Arch</div>
+                                    <div 
+                                        ${editableAttr}
+                                        onblur="handleInlineCardEdit('${item.id}', 'specArch', this.innerText)"
+                                        class="text-xs font-semibold text-apex-cyan truncate mt-0.5"
+                                    >${escapeHtml(item.specArch)}</div>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-carbon-950/90 border border-carbon-800">
+                                    <div class="text-[10px] font-mono uppercase text-slate-400">Telemetry / TDP</div>
+                                    <div 
+                                        ${editableAttr}
+                                        onblur="handleInlineCardEdit('${item.id}', 'specPerf', this.innerText)"
+                                        class="text-xs font-semibold text-slate-200 truncate mt-0.5"
+                                    >${escapeHtml(item.specPerf)}</div>
+                                </div>
+                                <div class="p-2.5 rounded-xl bg-carbon-950/90 border border-carbon-800">
+                                    <div class="text-[10px] font-mono uppercase text-slate-400">Platform / Tier</div>
+                                    <div 
+                                        ${editableAttr}
+                                        onblur="handleInlineCardEdit('${item.id}', 'specTier', this.innerText)"
+                                        class="text-xs font-semibold text-amber-300 truncate mt-0.5"
+                                    >${escapeHtml(item.specTier)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer Actions -->
+                    <div class="px-5 py-3.5 bg-carbon-950/60 border-t border-carbon-800/80 flex items-center justify-between">
+                        <button onclick="openReaderModal('${item.id}')" class="text-xs font-display font-bold uppercase tracking-wider text-white hover:text-apex-red transition flex items-center gap-1.5">
+                            <span>Read Full Spec Sheet</span>
+                            <i class="fa-solid fa-arrow-right text-apex-red"></i>
+                        </button>
+                        <button onclick="sendToCompare('${item.id}')" class="text-[11px] font-mono text-slate-400 hover:text-apex-cyan transition flex items-center gap-1">
+                            <i class="fa-solid fa-scale-balanced"></i> Compare
+                        </button>
+                    </div>
+                </article>
+                `;
+            }).join("");
+        }
+
+        // ============================================================================
+        // 4. INLINE EDIT MODE & FULL MODAL CMS EDITOR
+        // ============================================================================
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            const body = document.body;
+            const btn = document.getElementById("editModeBtn");
+            const dot = document.getElementById("editStatusDot");
+            const text = document.getElementById("editModeText");
+            const notice = document.getElementById("inlineEditNotice");
+            const toolbar = document.getElementById("adminToolbar");
+
+            if (isEditMode) {
+                body.classList.add("edit-mode-active");
+                btn.classList.replace("border-carbon-700", "border-apex-cyan");
+                dot.classList.replace("bg-slate-500", "bg-apex-cyan");
+                dot.classList.add("animate-ping");
+                text.textContent = "Edit Site: ON";
+                notice.classList.remove("hidden");
+                toolbar.classList.remove("hidden");
+                enableSiteFieldInlineEditing(true);
+                showToast("Edit Mode ON: Click any highlighted text or card to edit!");
+            } else {
+                body.classList.remove("edit-mode-active");
+                btn.classList.replace("border-apex-cyan", "border-carbon-700");
+                dot.classList.replace("bg-apex-cyan", "bg-slate-500");
+                dot.classList.remove("animate-ping");
+                text.textContent = "Edit Site: OFF";
+                notice.classList.add("hidden");
+                enableSiteFieldInlineEditing(false);
+                showToast("Edit Mode OFF: All changes saved.");
+            }
+
+            renderCards();
+            updateTelemetryCounters();
+        }
+
+        function enableSiteFieldInlineEditing(enable) {
+            const siteFields = document.querySelectorAll("[data-site-field]");
+            siteFields.forEach(el => {
+                if (enable) {
+                    el.setAttribute("contenteditable", "true");
+                    // Use input instead of blur to prevent cursor jumping or accidental loss of focus
+                    el.oninput = () => {
+                        const key = el.getAttribute("data-site-field");
+                        siteConfig[key] = el.innerHTML.trim();
+                        localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(siteConfig));
+                    };
+                } else {
+                    el.removeAttribute("contenteditable");
+                    el.oninput = null;
+                }
+            });
+        }
+
+        function handleInlineCardEdit(id, field, newValue) {
+            const entry = entries.find(e => e.id === id);
+            if (!entry) return;
+            const cleaned = newValue.trim();
+            if (entry[field] !== cleaned && cleaned.length > 0) {
+                entry[field] = cleaned;
+                saveDatabase("Card spec updated & auto-saved!");
+                populateCompareDropdowns();
+                renderComparison();
+            }
+        }
+
+        function toggleAdminToolbar() {
+            const toolbar = document.getElementById("adminToolbar");
+            toolbar.classList.toggle("hidden");
+        }
+
+        // Open Add/Edit Modal
+        function openEditorModal(entryId = null) {
+            const modal = document.getElementById("editorModal");
+            const modalTitle = document.getElementById("editorModalTitle");
+            const form = document.getElementById("entryForm");
+            form.reset();
+
+            if (entryId) {
+                const item = entries.find(e => e.id === entryId);
+                if (!item) return;
+                modalTitle.textContent = "Edit Vehicle / Tech Spec Entry";
+                document.getElementById("formEntryId").value = item.id;
+                document.getElementById("formTitle").value = item.title;
+                document.getElementById("formCategory").value = item.category;
+                document.getElementById("formImage").value = item.image;
+                updateFormImagePreview(item.image);
+                document.getElementById("wikiPhotoSearchInput").value = item.title.split("—")[0].trim();
+                document.getElementById("formSpecPower").value = item.specPower;
+                document.getElementById("formSpecArch").value = item.specArch;
+                document.getElementById("formSpecPerf").value = item.specPerf;
+                document.getElementById("formSpecTier").value = item.specTier;
+                document.getElementById("formSummary").value = item.summary;
+                document.getElementById("formContent").value = item.content;
+            } else {
+                modalTitle.textContent = "Add New Vehicle or Tech Spec Entry";
+                document.getElementById("formEntryId").value = "";
+                const defaultImg = "https://commons.wikimedia.org/wiki/Special:FilePath/Nissan_350Z_R.jpg?width=1000";
+                document.getElementById("formImage").value = defaultImg;
+                updateFormImagePreview(defaultImg);
+                document.getElementById("wikiPhotoSearchInput").value = "";
+            }
+
+            modal.classList.remove("hidden");
+        }
+
+        function closeEditorModal() {
+            document.getElementById("editorModal").classList.add("hidden");
+        }
+
+        async function setPresetByCommonsSearch(searchQuery, commonsFile = "") {
+            showToast(`Fetching verified photo for ${searchQuery}...`);
+            const url = await fetchCommonsFileDirectUrl(commonsFile, searchQuery);
+            if (url) {
+                document.getElementById("formImage").value = url;
+                updateFormImagePreview(url);
+                showToast(`Applied verified photo for ${searchQuery}!`);
+            } else {
+                showToast("Could not fetch preset—try typing a model name in the search box.");
+            }
+        }
+
+        async function setPresetByCommonsFile(commonsFile, fallbackWikiTitle = "") {
+            showToast(`Fetching exact Wikimedia Commons photo (${commonsFile.replace("File:", "")})...`);
+            let url = await fetchCommonsFileDirectUrl(commonsFile, fallbackWikiTitle.replace(/_/g, " "));
+            if (url) {
+                document.getElementById("formImage").value = url;
+                updateFormImagePreview(url);
+                showToast("Applied exact model photo!");
+            } else {
+                showToast("Could not fetch preset—try typing a model name in the search box.");
+            }
+        }
+
+        // Live Wikipedia + Wikimedia Commons Photo Fetcher for any Car / Motorcycle / GPU
+        async function fetchExactWikiPhoto() {
+            const searchInput = document.getElementById("wikiPhotoSearchInput");
+            const titleInput = document.getElementById("formTitle");
+            const rawQuery = (searchInput.value.trim() || titleInput.value.split("—")[0].trim());
+
+            if (!rawQuery) {
+                showToast("Enter a vehicle or hardware name first (e.g., Nissan 350Z, Mazda RX-7).");
+                return;
+            }
+
+            showToast(`Searching Wikimedia Commons for "${rawQuery}"...`);
+
+            try {
+                // Step 1: Search Wikimedia Commons directly for exact vehicle/hardware photo
+                const commonsImg = await searchWikimediaCommonsPhoto(rawQuery);
+                if (commonsImg) {
+                    document.getElementById("formImage").value = commonsImg;
+                    updateFormImagePreview(commonsImg);
+                    showToast(`Loaded verified Wikimedia Commons photo for "${rawQuery}"!`);
+                    return;
+                }
+
+                // Step 2: Fallback to Wikipedia Page Summary API
+                const wikiImg = await fetchWikiSummaryImage(rawQuery);
+                if (wikiImg) {
+                    document.getElementById("formImage").value = wikiImg;
+                    updateFormImagePreview(wikiImg);
+                    showToast(`Loaded verified Wikipedia photo for "${rawQuery}"!`);
+                    return;
+                }
+
+                showToast("No photo found for that query—try a simpler model name (e.g. 'Honda NSX').");
+            } catch (err) {
+                console.error("Photo fetch error:", err);
+                showToast("Could not reach Wikimedia API. Check connection or use a preset.");
+            }
+        }
+
+        function updateFormImagePreview(url) {
+            const preview = document.getElementById("formImagePreview");
+            if (preview && url) {
+                preview.src = url;
+            }
+        }
+
+        // Local Image Upload (converts file to DataURL so it saves in localStorage & exports)
+        function handleLocalImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                document.getElementById("formImage").value = dataUrl;
+                updateFormImagePreview(dataUrl);
+                showToast("Uploaded local image into editor!");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Switch between multiple verified photos on a card (e.g., R32 vs R33 vs R34 vs R35 GT-R, A80 vs A90 vs A70 Supra)
+        async function switchCardGalleryPhoto(event, entryId, imageUrl, commonsFile = "", commonsSearch = "", label = "") {
+            event.stopPropagation();
+            let targetUrl = imageUrl;
+            if (commonsFile || commonsSearch) {
+                const resolved = await fetchCommonsFileDirectUrl(commonsFile, commonsSearch || label);
+                if (resolved) targetUrl = resolved;
+            }
+            const item = entries.find(e => e.id === entryId);
+            if (item) {
+                item.image = targetUrl;
+                if (commonsFile) item.commonsFile = commonsFile;
+                saveDatabase(label ? `Switched photo to ${label}!` : "Switched active model photo!");
+                renderCards();
+                renderComparison();
+            }
+        }
+
+        function saveEntryForm(event) {
+            event.preventDefault();
+            const existingId = document.getElementById("formEntryId").value;
+            const existingItem = existingId ? entries.find(e => e.id === existingId) : null;
+            const newEntry = {
+                id: existingId || "entry-" + Date.now(),
+                title: document.getElementById("formTitle").value.trim(),
+                category: document.getElementById("formCategory").value,
+                image: document.getElementById("formImage").value.trim() || "https://placehold.co/900x500/11131c/ff2a4b?text=APEX+//+CORE",
+                gallery: existingItem?.gallery || [],
+                specPower: document.getElementById("formSpecPower").value.trim(),
+                specArch: document.getElementById("formSpecArch").value.trim(),
+                specPerf: document.getElementById("formSpecPerf").value.trim(),
+                specTier: document.getElementById("formSpecTier").value.trim(),
+                summary: document.getElementById("formSummary").value.trim(),
+                content: document.getElementById("formContent").value.trim()
+            };
+
+            if (existingId) {
+                const idx = entries.findIndex(e => e.id === existingId);
+                if (idx !== -1) entries[idx] = newEntry;
+                saveDatabase("Entry updated in database!");
+            } else {
+                entries.unshift(newEntry);
+                saveDatabase("New vehicle/tech entry published!");
+            }
+
+            closeEditorModal();
+            renderCards();
+            populateCompareDropdowns();
+            renderComparison();
+        }
+
+        // Delete Entry with Custom Modal
+        function promptDeleteEntry(entryId) {
+            const item = entries.find(e => e.id === entryId);
+            if (!item) return;
+            openConfirmModal(
+                "Delete Entry?",
+                `Are you sure you want to remove "${item.title}" from your catalog? You can always restore default entries later if needed.`,
+                () => {
+                    entries = entries.filter(e => e.id !== entryId);
+                    saveDatabase("Entry deleted.");
+                    renderCards();
+                    populateCompareDropdowns();
+                    renderComparison();
+                }
+            );
+        }
+
+        // ============================================================================
+        // 5. FULL SPEC READER MODAL
+        // ============================================================================
+        function openReaderModal(entryId) {
+            const item = entries.find(e => e.id === entryId);
+            if (!item) return;
+
+            const readerImg = document.getElementById("readerImage");
+            readerImg.src = item.image;
+            document.getElementById("readerCategory").textContent = item.category;
+            document.getElementById("readerTitle").textContent = item.title;
+            document.getElementById("readerSummary").textContent = item.summary;
+            document.getElementById("readerContent").textContent = item.content;
+
+            // Populate Gallery Switcher inside Reader Modal if entry has multiple photos
+            const galleryBar = document.getElementById("readerGalleryBar");
+            if (item.gallery && item.gallery.length > 1) {
+                galleryBar.classList.remove("hidden");
+                galleryBar.innerHTML = item.gallery.map(g => `
+                    <button 
+                        type="button"
+                        onclick="switchReaderGalleryPhoto('${item.id}', '${escapeHtml(g.url)}', '${escapeHtml(g.commonsFile || '')}', '${escapeHtml(g.commonsSearch || '')}', '${escapeHtml(g.label)}')"
+                        class="px-2.5 py-1 rounded-lg bg-carbon-900 hover:bg-apex-cyan hover:text-carbon-950 text-xs font-mono text-white border border-carbon-700 transition"
+                    ><i class="fa-solid fa-camera mr-1"></i>${escapeHtml(g.label)}</button>
+                `).join("");
+            } else {
+                galleryBar.classList.add("hidden");
+                galleryBar.innerHTML = "";
+            }
+
+            const editBtn = document.getElementById("readerEditBtn");
+            editBtn.onclick = () => {
+                closeReaderModal();
+                openEditorModal(item.id);
+            };
+
+            document.getElementById("readerSpecsGrid").innerHTML = `
+                <div class="p-3.5 rounded-xl bg-carbon-950 border border-carbon-800">
+                    <div class="text-[11px] font-mono uppercase text-slate-400">Power / Clock</div>
+                    <div class="font-display font-bold text-sm sm:text-base text-white mt-0.5">${escapeHtml(item.specPower)}</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-carbon-950 border border-carbon-800">
+                    <div class="text-[11px] font-mono uppercase text-slate-400">Engine / Architecture</div>
+                    <div class="font-display font-bold text-sm sm:text-base text-apex-cyan mt-0.5">${escapeHtml(item.specArch)}</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-carbon-950 border border-carbon-800">
+                    <div class="text-[11px] font-mono uppercase text-slate-400">0-100 / Telemetry</div>
+                    <div class="font-display font-bold text-sm sm:text-base text-emerald-400 mt-0.5">${escapeHtml(item.specPerf)}</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-carbon-950 border border-carbon-800">
+                    <div class="text-[11px] font-mono uppercase text-slate-400">Platform / Tier</div>
+                    <div class="font-display font-bold text-sm sm:text-base text-amber-300 mt-0.5">${escapeHtml(item.specTier)}</div>
+                </div>
+            `;
+
+            document.getElementById("readerModal").classList.remove("hidden");
+        }
+
+        function closeReaderModal() {
+            document.getElementById("readerModal").classList.add("hidden");
+        }
+
+        async function switchReaderGalleryPhoto(entryId, fallbackUrl, commonsFile = "", commonsSearch = "", label = "") {
+            let targetUrl = fallbackUrl;
+            if (commonsFile || commonsSearch) {
+                const resolved = await fetchCommonsFileDirectUrl(commonsFile, commonsSearch || label);
+                if (resolved) targetUrl = resolved;
+            }
+            const readerImg = document.getElementById("readerImage");
+            if (readerImg) readerImg.src = targetUrl;
+
+            const item = entries.find(e => e.id === entryId);
+            if (item) {
+                item.image = targetUrl;
+                if (commonsFile) item.commonsFile = commonsFile;
+                saveDatabase(label ? `Viewing ${label}` : "Updated active photo");
+                renderCards();
+                renderComparison();
+            }
+        }
+
+        // ============================================================================
+        // 6. FILTER, SEARCH & HEAD-TO-HEAD COMPARISON MATRIX
+        // ============================================================================
+        function setCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll(".cat-tab").forEach(btn => {
+                if (btn.getAttribute("data-cat") === cat) {
+                    btn.className = "cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-apex-red text-white shadow-lg shadow-apex-red/25";
+                } else {
+                    btn.className = "cat-tab px-4 py-2 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all bg-carbon-900 text-slate-300 hover:bg-carbon-800 border border-carbon-700";
+                }
+            });
+            renderCards();
+        }
+
+        function handleSearch(val) {
+            currentSearch = val;
+            const clearBtn = document.getElementById("clearSearchBtn");
+            if (val.trim().length > 0) {
+                clearBtn.classList.remove("hidden");
+            } else {
+                clearBtn.classList.add("hidden");
+            }
+            renderCards();
+        }
+
+        function clearSearch() {
+            document.getElementById("searchInput").value = "";
+            handleSearch("");
+            setCategory("ALL");
+        }
+
+        function populateCompareDropdowns() {
+            const selA = document.getElementById("compareSelectA");
+            const selB = document.getElementById("compareSelectB");
+            if (!selA || !selB || entries.length === 0) return;
+
+            const prevA = selA.value;
+            const prevB = selB.value;
+
+            const optionsHtml = entries.map(e => `<option value="${e.id}">[${escapeHtml(e.category)}] ${escapeHtml(e.title)}</option>`).join("");
+            selA.innerHTML = optionsHtml;
+            selB.innerHTML = optionsHtml;
+
+            if (entries.some(e => e.id === prevA)) selA.value = prevA;
+            else selA.value = entries[0]?.id || "";
+
+            if (entries.some(e => e.id === prevB)) selB.value = prevB;
+            else selB.value = entries[1]?.id || entries[0]?.id || "";
+        }
+
+        function renderComparison() {
+            const container = document.getElementById("comparisonResult");
+            if (entries.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-slate-400">Add at least one entry to compare specs.</div>`;
+                return;
+            }
+
+            const idA = document.getElementById("compareSelectA").value;
+            const idB = document.getElementById("compareSelectB").value;
+            const itemA = entries.find(e => e.id === idA) || entries[0];
+            const itemB = entries.find(e => e.id === idB) || entries[0];
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-carbon-800">
+                    ${renderCompareColumn(itemA, "apex-red")}
+                    ${renderCompareColumn(itemB, "apex-cyan")}
+                </div>
+            `;
+        }
+
+        function renderCompareColumn(item, accentColor) {
+            return `
+                <div class="p-6 space-y-5">
+                    <div class="flex items-center gap-4">
+                        <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="w-20 h-20 rounded-xl object-cover border border-carbon-700 shrink-0" onerror="handleBrokenCardImage(this, '${item.id}')">
+                        <div>
+                            <span class="text-[11px] font-mono uppercase text-${accentColor}">${escapeHtml(item.category)}</span>
+                            <h4 class="font-display font-bold text-lg text-white leading-snug">${escapeHtml(item.title)}</h4>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5 text-sm">
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-carbon-900 border border-carbon-800">
+                            <span class="text-xs font-mono text-slate-400">Power / Clock</span>
+                            <span class="font-semibold text-white text-right">${escapeHtml(item.specPower)}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-carbon-900 border border-carbon-800">
+                            <span class="text-xs font-mono text-slate-400">Engine / Architecture</span>
+                            <span class="font-semibold text-apex-cyan text-right">${escapeHtml(item.specArch)}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-carbon-900 border border-carbon-800">
+                            <span class="text-xs font-mono text-slate-400">Performance / TDP</span>
+                            <span class="font-semibold text-emerald-400 text-right">${escapeHtml(item.specPerf)}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-carbon-900 border border-carbon-800">
+                            <span class="text-xs font-mono text-slate-400">Chassis / Market Tier</span>
+                            <span class="font-semibold text-amber-300 text-right">${escapeHtml(item.specTier)}</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed">${escapeHtml(item.summary)}</p>
+
+                    <button onclick="openReaderModal('${item.id}')" class="w-full py-2.5 rounded-xl bg-carbon-900 hover:bg-carbon-800 text-xs font-display font-bold uppercase tracking-wider text-white border border-carbon-700 transition">
+                        Inspect Full Engineering Notes
+                    </button>
+                </div>
+            `;
+        }
+
+        function sendToCompare(entryId) {
+            const selA = document.getElementById("compareSelectA");
+            const selB = document.getElementById("compareSelectB");
+            if (selA.value !== entryId) {
+                selB.value = entryId;
+            }
+            renderComparison();
+            document.getElementById("compareSection").scrollIntoView({ behavior: "smooth" });
+            showToast("Loaded into Side-by-Side Comparison Matrix!");
+        }
+
+        // ============================================================================
+        // 7. EXPORT / IMPORT JSON & DOWNLOAD SELF-CONTAINED UPDATED HTML
+        // ============================================================================
+        function exportDatabaseJSON() {
+            const payload = {
+                exportedAt: new Date().toISOString(),
+                siteConfig,
+                entries,
+                feedbackList
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "apex-core-backup.json";
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Exported JSON backup file!");
+        }
+
+        function importDatabaseJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (Array.isArray(parsed.entries)) {
+                        entries = parsed.entries;
+                        if (parsed.siteConfig) siteConfig = parsed.siteConfig;
+                        if (Array.isArray(parsed.feedbackList)) feedbackList = parsed.feedbackList;
+                        saveDatabase("Imported JSON database successfully!");
+                        applySiteConfigToDOM();
+                        renderCards();
+                        populateCompareDropdowns();
+                        renderComparison();
+                        renderFeedbackBoard();
+                    }
+                } catch (err) {
+                    showToast("Invalid JSON file format.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function downloadUpdatedHTML() {
+            // Turn off edit mode visuals before serializing
+            if (isEditMode) toggleEditMode();
+
+            // Clone current document and bake current entries + siteConfig + feedbackList as the new defaults
+            const docClone = document.documentElement.cloneNode(true);
+            const scriptEl = docClone.querySelector("#appDataScript");
+            if (scriptEl) {
+                let scriptText = scriptEl.textContent;
+                scriptText = scriptText.replace(
+                    /const DEFAULT_SITE_CONFIG = [\s\S]*?;\n/,
+                    `const DEFAULT_SITE_CONFIG = ${JSON.stringify(siteConfig, null, 4)};\n`
+                );
+                scriptText = scriptText.replace(
+                    /const DEFAULT_FEEDBACK = \[[\s\S]*?\];\n/,
+                    `const DEFAULT_FEEDBACK = ${JSON.stringify(feedbackList, null, 4)};\n`
+                );
+                scriptText = scriptText.replace(
+                    /const DEFAULT_ENTRIES = \[[\s\S]*?\];\n/,
+                    `const DEFAULT_ENTRIES = ${JSON.stringify(entries, null, 4)};\n`
+                );
+                scriptEl.textContent = scriptText;
+            }
+
+            const fullHtml = "<!DOCTYPE html>\n" + docClone.outerHTML;
+            const blob = new Blob([fullHtml], { type: "text/html" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "apex-core-custom-site.html";
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Downloaded standalone HTML with your edits baked in!");
+        }
+
+        function confirmResetDatabase() {
+            openConfirmModal(
+                "Reset to Factory Defaults?",
+                "This will restore all original vehicle & hardware articles and discard custom local edits.",
+                () => {
+                    localStorage.removeItem(STORAGE_KEY_ENTRIES);
+                    localStorage.removeItem(STORAGE_KEY_CONFIG);
+                    localStorage.removeItem(STORAGE_KEY_FEEDBACK);
+                    localStorage.removeItem("apex_core_db_v6");
+                    localStorage.removeItem("apex_core_db_v5");
+                    localStorage.removeItem("apex_core_entries_v2");
+                    loadDatabase();
+                    applySiteConfigToDOM();
+                    renderCards();
+                    populateCompareDropdowns();
+                    renderComparison();
+                    renderFeedbackBoard();
+                    updateTelemetryCounters();
+                    showToast("Database restored to factory defaults.");
+                }
+            );
+        }
+
+        // ============================================================================
+        // 7B. COMMUNITY FEEDBACK & REQUEST BOARD LOGIC
+        // ============================================================================
+        function getFeedbackCategoryBadge(cat) {
+            switch (cat) {
+                case "Vehicle Request":
+                    return "bg-apex-red/20 text-apex-red border-apex-red/40";
+                case "Bike Request":
+                    return "bg-amber-500/20 text-amber-300 border-amber-500/40";
+                case "PC / GPU Benchmark Request":
+                    return "bg-apex-cyan/20 text-apex-cyan border-apex-cyan/40";
+                case "Spec Correction":
+                    return "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
+                default:
+                    return "bg-slate-700/60 text-slate-200 border-slate-600";
+            }
+        }
+
+        function renderFeedbackBoard() {
+            const container = document.getElementById("feedbackBoardList");
+            const countBadge = document.getElementById("feedbackCountBadge");
+            const filterVal = document.getElementById("feedbackFilterSelect")?.value || "ALL";
+            if (!container) return;
+
+            const filtered = feedbackList.filter(fb => filterVal === "ALL" || fb.category === filterVal);
+            if (countBadge) countBadge.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 rounded-2xl bg-carbon-900/60 border border-carbon-800 text-center text-slate-400 text-sm">
+                        No feedback entries in this category yet. Be the first to post a request on the left!
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(fb => {
+                const badgeClass = getFeedbackCategoryBadge(fb.category);
+                const bolts = "⚡".repeat(Number(fb.rating) || 5);
+                return `
+                    <div class="p-4 sm:p-5 rounded-2xl bg-carbon-900/90 border border-carbon-800 hover:border-carbon-700 transition space-y-2.5">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-carbon-950 border border-carbon-700 flex items-center justify-center font-display font-bold text-xs text-apex-cyan">
+                                    ${escapeHtml(fb.name.charAt(0).toUpperCase())}
+                                </div>
+                                <div>
+                                    <div class="font-display font-bold text-sm text-white">${escapeHtml(fb.name)}</div>
+                                    <div class="text-[10px] font-mono text-slate-400">${escapeHtml(fb.date)}</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono uppercase border ${badgeClass}">
+                                    ${escapeHtml(fb.category)}
+                                </span>
+                                <span class="text-xs font-mono text-amber-400" title="${fb.rating}/5 Octane Rating">${bolts}</span>
+                            </div>
+                        </div>
+
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">${escapeHtml(fb.message)}</p>
+
+                        <div class="flex items-center justify-between pt-1 border-t border-carbon-800/70 text-xs">
+                            <button onclick="upvoteFeedback('${fb.id}')" class="px-2.5 py-1 rounded-lg bg-carbon-950 hover:bg-carbon-800 text-slate-300 hover:text-apex-cyan border border-carbon-800 transition flex items-center gap-1.5 font-mono text-[11px]">
+                                <i class="fa-solid fa-thumbs-up text-apex-cyan"></i>
+                                <span>Upvote (${fb.likes || 0})</span>
+                            </button>
+                            <button onclick="deleteFeedbackItem('${fb.id}')" title="Remove Feedback Post" class="text-[11px] font-mono text-slate-500 hover:text-apex-red transition flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function submitFeedbackForm(event) {
+            event.preventDefault();
+            const name = document.getElementById("fbName").value.trim();
+            const category = document.getElementById("fbCategory").value;
+            const rating = parseInt(document.getElementById("fbRating").value, 10) || 5;
+            const message = document.getElementById("fbMessage").value.trim();
+
+            if (!name || !message) return;
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+            const newPost = {
+                id: "fb-" + Date.now(),
+                name,
+                category,
+                rating,
+                date: dateStr,
+                likes: 1,
+                message
+            };
+
+            feedbackList.unshift(newPost);
+            saveDatabase("Feedback posted to Community Board!");
+            document.getElementById("feedbackForm").reset();
+            renderFeedbackBoard();
+        }
+
+        function upvoteFeedback(id) {
+            const item = feedbackList.find(f => f.id === id);
+            if (!item) return;
+            item.likes = (item.likes || 0) + 1;
+            saveDatabase("Upvoted community request!");
+            renderFeedbackBoard();
+        }
+
+        function deleteFeedbackItem(id) {
+            feedbackList = feedbackList.filter(f => f.id !== id);
+            saveDatabase("Feedback post removed.");
+            renderFeedbackBoard();
+        }
+
+        // ============================================================================
+        // 8. UTILITIES (CUSTOM CONFIRM MODAL, TOAST, ESCAPE HTML)
+        // ============================================================================
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById("confirmTitle").textContent = title;
+            document.getElementById("confirmMessage").textContent = message;
+            const btn = document.getElementById("confirmActionBtn");
+            btn.onclick = () => {
+                closeConfirmModal();
+                onConfirm();
+            };
+            document.getElementById("confirmModal").classList.remove("hidden");
+        }
+
+        function closeConfirmModal() {
+            document.getElementById("confirmModal").classList.add("hidden");
+        }
+
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById("toastNotification");
+            document.getElementById("toastMessage").textContent = message;
+            toast.classList.remove("hidden");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 3200);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        // Initialize on Window Load
+        window.onload = function () {
+            loadDatabase();
+            applySiteConfigToDOM();
+            renderCards();
+            populateCompareDropdowns();
+            renderComparison();
+            renderFeedbackBoard();
+            updateTelemetryCounters();
+            // Automatically verify and sync live Wikipedia photos for all entries on load
+            repairAllPhotos(false);
+        };
+    </script>
+</body>
+</html>
